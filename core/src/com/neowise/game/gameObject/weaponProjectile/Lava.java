@@ -48,7 +48,7 @@ public class Lava extends WeaponProjectile {
 		updatePos(delta);
 		Physics.Force_Gravity(this, homeBase.getPos(), delta);
 		if(CollisionDetector.collision(pos, homeBase.getPos(), homeBase.rotation, homeBase.pixmap)){
-			homeBase.removePointsBomb(pos.x, pos.y, 1);
+			homeBase.removePointsLava(pos.x, pos.y, 2);
 			homeBase.checkIntegrity = true;
 			damage -= 1;
 			vel = new Vector2(0,0);

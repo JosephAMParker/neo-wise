@@ -7,6 +7,7 @@ import com.neowise.game.gameObject.defender.Defender;
 import com.neowise.game.homeBase.HomeBase;
 import com.neowise.game.physics.CollisionDetector;
 import com.neowise.game.physics.Physics;
+import com.neowise.game.util.RandomUtil;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -50,7 +51,8 @@ public class Bomb extends WeaponProjectile {
 			Vector2 toPlanet = pos.cpy().nor();
 			MyAnimation animation = new MyAnimation("bombtest",8, new Vector2(pos.x, pos.y).add(toPlanet.nor().scl(6)),toPlanet.angle()-90,false,0.08f,20);
 			animations.add(animation);
-			homeBase.removePointsBomb(pos.x, pos.y, 2);
+
+			homeBase.removePointsBomb(pos.x, pos.y, 10 + RandomUtil.nextInt(10), 0.3f + RandomUtil.nextFloat()/10);
 
 			toRemove = true;
 		}

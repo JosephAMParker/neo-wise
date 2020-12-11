@@ -551,7 +551,7 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
 
         if(pointer < 5){
             if(leftClickMode == leftClickModes.DROP_LAVA)
-                hostileProjectiles.add(new Lava(screenX, screenY, 5));
+                hostileProjectiles.add(new Lava(screenX, screenY, 50));
         }
         return false;
     }

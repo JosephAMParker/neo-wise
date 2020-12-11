@@ -83,9 +83,9 @@ public class DrawingBoard {
 
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 
-		sprites = new ArrayList<Sprite>();
-		homeBaseSprites = new ArrayList<Sprite>();
-		spritesForeGround = new ArrayList<Sprite>();
+		sprites = new ArrayList();
+		homeBaseSprites = new ArrayList();
+		spritesForeGround = new ArrayList();
 
 		atlas = new TextureAtlas(Gdx.files.internal("TextureAtlasOut/atlas.atlas"));
 
@@ -95,9 +95,6 @@ public class DrawingBoard {
 		
 		homeBaseTexture.draw(pixmap, 0, 0);
 		homeBaseSprite.setRegion(homeBaseTexture);
-		//homeBaseSprite.translateX(- homeBaseSprite.getWidth() / 2);
-		//homeBaseSprite.setOrigin(homeBaseSprite.getHeight() / 2, homeBaseSprite.getHeight() / 2);
-		
 	}
 	
 	public void updateCamera(OrthographicCamera cam){

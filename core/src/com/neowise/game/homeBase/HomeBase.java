@@ -18,6 +18,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.neowise.game.gameObject.GameObject;
 import com.neowise.game.gameObject.defender.Defender;
 import com.neowise.game.main.LevelInfo;
+import com.neowise.game.util.RandomUtil;
 
 public class HomeBase extends GameObject {
 
@@ -57,8 +58,8 @@ public class HomeBase extends GameObject {
 
 		centreIntact = true;
 		checkingIntegrity = false;
-		bb1 = bombmapsmall1.getPixels();
-		bb2 = bombmapsmall2.getPixels();
+		//bb1 = bombmapsmall1.getPixels();
+		//bb2 = bombmapsmall2.getPixels();
 		bbl = lava.getPixels();
 		checkIntegrity = false;
 
@@ -106,15 +107,14 @@ public class HomeBase extends GameObject {
 		}
 		*/
 
-		pixmap.setColor(Color.alpha(1f));
+		pixmap.setColor(Color.alpha(1));
 		pixmap.fillCircle(size / 2, size / 2, size / 2);
 		preChunk.size = size;
 
 
 	}
 
-	//remove a circle, fading from center
-	public void removePointsFadedCircle(float x, float y, float bombwidth){
+	public void removePointsLava(float x, float y, int bombRadius){
 
 		x  -= pos.x;
 		y  -= pos.y;
@@ -127,78 +127,61 @@ public class HomeBase extends GameObject {
 		x_ += size/2;
 		y_  = size - y_ - size/2;
 
-		float Rpixel;
-		float r = 0;
-		float a = 0;
-
-		for (int i = (int) -bombwidth; i < bombwidth; i++){
-
-			for(int j = (int) -bombwidth; j < bombwidth; j++){
-
-				a = new Color(pixmap.getPixel((int) x_ + i, (int) y_ + j)).a;
-				float distance = ((float) (i*i + j*j)) / (bombwidth*bombwidth);
-				Rpixel = distance > 1 ? 0 : 1;
-				Rpixel *= (1-distance);
-
-				a -= Rpixel;
-				if (a <= 0)
-					a = 0;
-
-				pixmap.drawPixel((int) x_ + i, (int) y_ + j, Color.alpha(a));
-
+		for (int i = -bombRadius; i < bombRadius; i++) {
+			for (int j = -bombRadius; j < bombRadius; j++) {
+				int c = 0;
+				int a = pixmap.getPixel((int) x_ + i, (int) y_ + j) & 0x000000ff;
+				if(a>0){
+					a -= 2;
+					a = a > 0 ? a : 0;
+					c = (0 << 24) | (0 << 16) | (0 << 8) | a;
+				}
+				pixmap.drawPixel((int) x_ + i, (int) y_ + j, c);
 			}
 		}
 	}
-	
-	public void removePointsBomb(float x, float y, int type) {
-		
-		x  -= pos.x; 
+
+	public void removePointsBomb(float x, float y, int bombRadius, float centerHoleRadius){
+
+		x  -= pos.x;
 		y  -= pos.y;
 
 		double rot = 2* Math.PI - rotation ;
 
 		float x_ = (float) (x * Math.cos(rot) - y * Math.sin(rot));
 		float y_ = (float) (x * Math.sin(rot) + y * Math.cos(rot));
-		
+
 		x_ += size/2;
 		y_  = size - y_ - size/2;
 
-		float Rpixel;
-		float r = 0;
-		float a = 0;
-		int bombwidth;
-		
-		switch (type) {
+		for (int i = -bombRadius; i < bombRadius; i++) {
+			for (int j = -bombRadius; j < bombRadius; j++) {
+				float distance = ((float) (i*i + j*j)) / (bombRadius*bombRadius);
+				int a = pixmap.getPixel((int) x_ + i, (int) y_ + j) & 0x000000ff; //alpha value of pixel
+				int c = 0;
+				if (a>0) {
 
-			case 1 : bb = bbl; bombwidth = 5;  break;
-			case 2 : bb = bb1; bombwidth = 30; break;
-			case 3 : bb = bb2; bombwidth = 40; break;
+					//cut out a hole (set alpha to 0 in a ring) of radius centerholeradius
+					if(distance < centerHoleRadius && distance > centerHoleRadius*0.5)
+						a -= 255;
 
-			default: return;
-		
-		}
+					//for the rest, cause damage closer to center, fading further out.
+					else if (distance > centerHoleRadius && distance < 1){
+						distance = (1 - distance);
+						distance += (RandomUtil.nextFloat() * 0.5f) * distance;
 
-		for (int i = 0;i < bombwidth; i++){
-			
-			for(int j = 0; j < bombwidth;j++){
-				
+						a -= distance * 250;// + random.nextInt(5);
+					}
 
-				a = new Color(pixmap.getPixel((int) x_ + i - bombwidth / 2, (int) y_ + j - bombwidth / 2)).a;
-				Rpixel = (bb.getInt() >>> 24) / 255f;
-				
-				a -= Rpixel;
-				if (a <= 0)
-					a = 0;
+					//ensure no negative alpha;
+					//create new color, RGBA8888 => 000a
+					a = a > 0 ? a : 0;
+					c = (0 << 24) | (0 << 16) | (0 << 8) | a;
+				}
 
-				pixmap.drawPixel((int) x_ + i - bombwidth/2, (int) y_ + j - bombwidth/2, Color.alpha(a));
-
+				pixmap.drawPixel((int) x_ + i, (int) y_ + j, c);
 			}
 		}
-
-		bb.clear();
-		
-		
-
 	}
 	
 	public void rotate(float delta) {
@@ -221,24 +204,6 @@ public class HomeBase extends GameObject {
 	public Vector2 getPos() {
 		// TODO Auto-generated method stub
 		return pos.cpy();
-	}
-
-	public void removePointsCircle(int x, int y, int radius) {
-		
-		x  -= pos.x; 
-		y  -= pos.y;
-
-		double rot = 2* Math.PI - rotation ;
-
-		float x_ = (float) (x * Math.cos(rot) - y * Math.sin(rot));
-		float y_ = (float) (x * Math.sin(rot) + y * Math.cos(rot));
-		
-		x_ += size/2;
-		y_  = size - y_ - size/2;
-
-		pixmap.setColor(Color.CLEAR);
-		pixmap.fillCircle((int) x_, (int) y_, radius);
-		
 	}
 
 	public void checkIntegrityStage1() throws NullPointerException{
@@ -276,7 +241,6 @@ public class HomeBase extends GameObject {
 					currentLabel = minNeighbor;
 					CLabel root = allLabels.get(currentLabel).getRoot();
 
-
 					for(int k = 0; k < neighborCount; k++){
 
 						if (root.name != allLabels.get(neighborArray[k]).getRoot().name){
@@ -298,7 +262,6 @@ public class HomeBase extends GameObject {
 		minNeighbor = 90;
 		neighborCount = 0;
 
-
 		if(y - 1 > 0 && x - 1 > 0 && labels[x - 1][y - 1] != 0){
 
 			if(labels[x-1][y-1] < minNeighbor)
@@ -307,7 +270,6 @@ public class HomeBase extends GameObject {
 			neighborArray[neighborCount++] = labels[x-1][y-1];
 
 		}
-
 		if(y - 1 > 0 && labels[x][y - 1] != 0){
 
 			if(labels[x][y-1] < minNeighbor)
@@ -316,7 +278,6 @@ public class HomeBase extends GameObject {
 			neighborArray[neighborCount++] = labels[x][y-1];
 
 		}
-
 		if(y - 1 > 0 && x + 1 < width && labels[x + 1][y - 1] != 0){
 
 			if(labels[x+1][y-1] < minNeighbor)
@@ -325,7 +286,6 @@ public class HomeBase extends GameObject {
 			neighborArray[neighborCount++] = labels[x+1][y-1];
 
 		}
-
 		if(x - 1 > 0 && labels[x - 1][y] != 0){
 
 			if(labels[x-1][y] < minNeighbor)
@@ -399,8 +359,6 @@ public class HomeBase extends GameObject {
 					//debuggin
 
 				}
-
-
 
 				//texture.
 				float chx = prechunk.minx - width/ 2 + chwidth/2;

@@ -21,9 +21,9 @@ public class CityBombGravity extends  CityBomb{
         vel = target.sub(pos).nor().scl(speed);
         this.left = left;
         if(left)
-            vel.rotate(-150);
+            vel.rotateDeg(-150);
         else
-            vel.rotate(150);
+            vel.rotateDeg(150);
 
     }
 
