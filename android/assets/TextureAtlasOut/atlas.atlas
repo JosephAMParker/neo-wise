@@ -1,0 +1,188 @@
+
+atlas.png
+size: 1024,256
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+CityBombTurretArmed
+  rotate: false
+  xy: 2, 16
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 0
+CityBombTurretArmed
+  rotate: false
+  xy: 2, 16
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 1
+CityBombTurretArmed
+  rotate: false
+  xy: 989, 240
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 2
+CityBombTurretNormal
+  rotate: false
+  xy: 945, 152
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 0
+CityBombTurretNormal
+  rotate: false
+  xy: 124, 50
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 1
+CityBombTurretNormal
+  rotate: false
+  xy: 256, 94
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 2
+CityBombTurretNormal
+  rotate: false
+  xy: 300, 138
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 3
+CityBombTurretNormal
+  rotate: false
+  xy: 2, 2
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 4
+CityBombTurretNormal
+  rotate: false
+  xy: 18, 16
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 5
+CityBombTurretNormal
+  rotate: false
+  xy: 989, 226
+  size: 14, 12
+  orig: 14, 12
+  offset: 0, 0
+  index: 6
+ShipTestShip
+  rotate: false
+  xy: 1005, 242
+  size: 12, 10
+  orig: 12, 10
+  offset: 0, 0
+  index: 0
+ShipTestShip
+  rotate: false
+  xy: 961, 154
+  size: 12, 10
+  orig: 12, 10
+  offset: 0, 0
+  index: 1
+ShipWeaponUpgrader
+  rotate: false
+  xy: 124, 38
+  size: 12, 10
+  orig: 12, 10
+  offset: 0, 0
+  index: 0
+asteriodFlames
+  rotate: false
+  xy: 2, 30
+  size: 120, 120
+  orig: 120, 120
+  offset: 0, 0
+  index: 0
+asteriodFlames
+  rotate: false
+  xy: 2, 30
+  size: 120, 120
+  orig: 120, 120
+  offset: 0, 0
+  index: 1
+bombtest
+  rotate: false
+  xy: 945, 210
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 0
+bombtest
+  rotate: false
+  xy: 124, 108
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 1
+bombtest
+  rotate: false
+  xy: 945, 166
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 2
+bombtest
+  rotate: false
+  xy: 124, 64
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 3
+bombtest
+  rotate: false
+  xy: 168, 108
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 4
+bombtest
+  rotate: false
+  xy: 168, 64
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 5
+bombtest
+  rotate: false
+  xy: 212, 108
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 6
+bombtest
+  rotate: false
+  xy: 212, 64
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 7
+bombtest
+  rotate: false
+  xy: 256, 108
+  size: 42, 42
+  orig: 42, 42
+  offset: 0, 0
+  index: 8
+cloud
+  rotate: false
+  xy: 2, 152
+  size: 941, 100
+  orig: 941, 100
+  offset: 0, 0
+  index: -1
+star
+  rotate: false
+  xy: 140, 60
+  size: 2, 2
+  orig: 2, 2
+  offset: 0, 0
+  index: -1

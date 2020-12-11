@@ -1,0 +1,90 @@
+1.
+    color coded levels/enemies and weapons/powerups.
+
+    item colors means counter to same color enemey.
+    example:
+
+        a mostly green level will have many green enemies. Green enemies could be fast moving agile and numerous.
+        green items could be:
+            weapons :
+                shotgun, flamethrower -- any AOE weapons.
+            powers :
+                slow time
+
+        anything that helps kill green items.
+
+
+    GREEN : Dexterity
+        Fast, numerous, agile enemies
+        AOE weapons, slow time skills, easy target system skills
+        weak vs single enemy
+
+        weapons :
+            shotgun :
+                fires many small weak bullets in spread
+            flamethrower :
+                leaves enemies burning. High damage close up, very low far away.
+        active skills :
+            slow time :
+                slows time for short duration (maybe wrong color, seems useful in all cases)
+            auto target :
+                targets enemies in range and auto shoots them. Aims perfectly
+        passive skills: :
+            increase player speed
+            increase player fire rate
+        enemies :
+            dart : quick green triangle shape. Moves fast, comes and moves in group. Shoots in quick bursts. low damage/heath
+            space invader square : square of 5 x 5 enemies (reminiscent of space invaders) approaches. Dropping bombs while moving back and forth.
+            shatter : Bursts into pieces when killed. if pieces are not destroyed before falling, cause damage.
+
+    PURPLE : Technical
+        enemies with specific ways to kill them. Enemies that buff others, player should try to kill this one first.
+        weapons :
+            laser, sniper
+        active skills :
+            slow time seems useful again.
+            EMP :
+                enemies skills deactivate for duration. No chandelier drops, no shield, no enemy heals. weak spots are larger.
+
+        enemies :
+            chandelier :
+                one small weak spot, does double damage. Hit other spots does half damage and causes shards to rain down and damage planet. Hit same spot after shard falls and cause normal damage.
+            shield bearer :
+                group of enemies, invul while the shield bearer is alive. Kill it and the remaining emenies are very weak. Shield bearer does no damage.
+            healer :
+                randomly heals nearby enemies. Can join groups, hide above blockers
+
+    RED : Strength
+      High damage weapons, high damage/health enemies
+
+      weapons :
+        chaingun :
+            high fire rate, small spread. Overheats after too much use.
+        doom rockets :
+            rocket launcher from doom
+      active skills :
+        burst mode. Increased rate of fire, no reloads
+      passive skills :
+        shield man block attacks -- move slower
+
+      enemies :
+        rocket : randomly targets location (shown by laser pointer). Rocket slowly moves to point. Causes large explosion if hit
+        blockers : normal enemies fly above blockers. High health, causes no damage itself.
+        LaserShip : stops in one location and laser beams in random direction (never straight down). Potentially causing huge damage if chunk is cut off. Slow speed, high health.
+
+2.
+    minigame levels :
+        plinko-health   : health bomb lands on planet, heals area where it lands
+        plinko-destruct : destroy a copy of your planet (or just a small one). Do enough damage and get a prize.
+        missile defence level.
+        dodge asteroids
+
+TODO
+make flock squad work
+    spawn properly
+    fly around planet
+    turn around at points
+    dive and shoot
+
+PUT ALL RENDERING IN DRAWING BOARD
+no more shaperenderer, animations and sprites for everything
