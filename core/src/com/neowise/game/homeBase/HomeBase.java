@@ -83,12 +83,7 @@ public class HomeBase extends GameObject {
 
 		//pixmap: the planets structure data is stored here. Cells with values (colors) greater than BLACK are considered on.
 		// All others are off and not used in collision detection, and alpha is set to 0.
-		//pixmap = new Pixmap(size, size, Format.RGBA4444);
 		pixmap.setBlending(Blending.None);
-		//pixmap.setColor(Color.DARK_GRAY);
-		//pixmap.fillCircle(size/2, size/2, 10*size/2);
-
-
 		height = pixmap.getHeight();
 		width = pixmap.getWidth();
 		
@@ -418,9 +413,6 @@ public class HomeBase extends GameObject {
 
 				chx_ += pos.x;
 				chy_ += pos.y;
-
-				//if possible make this point away from cetner of planet, so the chunk blasts away
-				//float chucnkvelocity x/y = (float) (random.nextFloat()*0.5-0.25);
 
 				chunks.add(new Chunk(new Texture(chunkmap), new Vector2(chx_ - chwidth / 2,chy_ - chheight / 2),new Vector2((float) (random.nextFloat()*0.5-0.25),(float) (random.nextFloat()*0.5-0.25)).sub(vel),rotation,0.03f));
 				chunkmap.dispose();

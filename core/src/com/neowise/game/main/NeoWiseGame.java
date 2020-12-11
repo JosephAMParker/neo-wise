@@ -10,13 +10,13 @@ import com.neowise.game.gameObject.player.PlayerShip;
 import com.neowise.game.homeBase.HomeBase;
 import com.neowise.game.menu.MainMenuScreen;
 
-public class ScorchedEarthGame extends Game {
+public class NeoWiseGame extends Game {
 
     protected SpriteBatch batch;
     protected BitmapFont font;
-    private com.neowise.game.homeBase.HomeBase homeBase;
+    private HomeBase homeBase;
     private StarMap starMap;
-    private com.neowise.game.gameObject.player.PlayerShip playerShip;
+    private PlayerShip playerShip;
     private AssetManager manager;
 
     public float w;
@@ -50,11 +50,11 @@ public class ScorchedEarthGame extends Game {
     }
 
     public void createNewPlayer(){
-        playerShip = new com.neowise.game.gameObject.player.PlayerShip(10,250);
+        playerShip = new PlayerShip(10,250);
     }
 
     public void createNewHomeBase(){
-        homeBase = new com.neowise.game.homeBase.HomeBase(0,0,100);
+        homeBase = new HomeBase(0,0,100);
     }
 
     public PlayerShip getPlayerShip() {

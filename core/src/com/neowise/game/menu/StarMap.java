@@ -11,7 +11,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.neowise.game.main.BasicLevel;
 import com.neowise.game.main.GameLevelObject;
 import com.neowise.game.main.LevelInfo;
-import com.neowise.game.main.ScorchedEarthGame;
+import com.neowise.game.main.NeoWiseGame;
 import com.neowise.game.physics.CollisionDetector;
 
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
     public Color bgColor = new Color(0.01f,0.01f,0.02f,1);
 
 
-    public StarMap(final ScorchedEarthGame game) {
+    public StarMap(final NeoWiseGame game) {
 
         super(game);
 

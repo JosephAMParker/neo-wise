@@ -13,14 +13,14 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.neowise.game.main.GameOptions;
-import com.neowise.game.main.ScorchedEarthGame;
+import com.neowise.game.main.NeoWiseGame;
 
 /**
  * Created by tabletop on 9/25/15.
  */
 public class OptionsScreen implements Screen {
 
-    final ScorchedEarthGame game;
+    final NeoWiseGame game;
 
     Stage stage;
     Skin skin;
@@ -29,7 +29,7 @@ public class OptionsScreen implements Screen {
     SpriteBatch batch;
 
 
-    public OptionsScreen(ScorchedEarthGame game) {
+    public OptionsScreen(NeoWiseGame game) {
         this.game = game;
 
         batch = new SpriteBatch();

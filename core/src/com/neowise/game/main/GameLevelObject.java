@@ -29,7 +29,7 @@ import java.util.Random;
 
 public abstract class GameLevelObject implements Screen, InputProcessor {
 
-    public final ScorchedEarthGame game;
+    public final NeoWiseGame game;
 
     // Camera, Stage and graphics related fields
     public OrthographicCamera camera;
@@ -68,7 +68,7 @@ public abstract class GameLevelObject implements Screen, InputProcessor {
     public PlayerShip playerShip;
     public CollisionDetector collisionDetector;
 
-    public GameLevelObject(final ScorchedEarthGame game) {
+    public GameLevelObject(final NeoWiseGame game) {
 
         this.game = game;
         this.homeBase = game.getHomeBase();

@@ -73,7 +73,7 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
     private LevelInfo levelInfo;
     private StarMap starMap;
 
-    public BasicLevel(final ScorchedEarthGame game) {
+    public BasicLevel(final NeoWiseGame game) {
 
         super(game);
 

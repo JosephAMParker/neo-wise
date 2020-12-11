@@ -12,12 +12,12 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.neowise.game.main.ScorchedEarthGame;
+import com.neowise.game.main.NeoWiseGame;
 
 
 public class MainMenuScreen implements Screen {
 
-    final ScorchedEarthGame game;
+    final NeoWiseGame game;
 
     Stage stage;
     //	OrthographicCamera camera;
@@ -26,7 +26,7 @@ public class MainMenuScreen implements Screen {
     float h = Gdx.graphics.getHeight();
     SpriteBatch batch;
 
-    public MainMenuScreen(final ScorchedEarthGame game) {
+    public MainMenuScreen(final NeoWiseGame game) {
         this.game = game;
 
 //		camera = new OrthographicCamera();
