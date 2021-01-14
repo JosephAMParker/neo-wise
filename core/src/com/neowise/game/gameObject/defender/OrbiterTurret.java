@@ -1,6 +1,13 @@
 package com.neowise.game.gameObject.defender;
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.neowise.game.gameObject.ship.Ship;
+import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
+import com.neowise.game.homeBase.HomeBase;
+import com.neowise.game.main.BasicLevel;
+
+import java.util.Collection;
 
 public class OrbiterTurret extends Defender {
 	
@@ -34,4 +41,23 @@ public class OrbiterTurret extends Defender {
 		
 	}
 
+	@Override
+	public void fire(Collection<WeaponProjectile> friendlyProjectiles) {
+
+	}
+
+	@Override
+	public void updateTimers(float delta) {
+
+	}
+
+	@Override
+	public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
+
+	}
+
+	@Override
+	public void update(BasicLevel basicLevel, float delta) {
+
+	}
 }

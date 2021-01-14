@@ -1,125 +1,107 @@
 package com.neowise.game.gameObject.ship;
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.neowise.game.draw.MyAnimation;
 import com.neowise.game.gameObject.weaponProjectile.Bomb;
 import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
-import com.neowise.game.util.OrbitalAngle;
-import com.neowise.game.squad.Squad;
+import com.neowise.game.main.BasicLevel;
+import com.neowise.game.util.Constants;
+import com.neowise.game.util.RandomUtil;
 
 import java.util.Collection;
-import java.util.Random;
 
-public class Ship_TestShip extends Ship {
+public class Ship_TestShip extends ShipRectangle {
 
-	float dis2orbit;
-	float speedMul;
 	float targetSpeed;
 	float targetTimer;
 	float bombTimer, bombTimerReset;
 
-	Random random;
+	public Ship_TestShip(Vector2 pos, float orbitalRange) {
 
-	public Ship_TestShip(float x, float y, float speedMul) {
-		super(x, y);
+		super(pos);
 
-		random = new Random();
-		resWorth = 50;
-		mass = 6;
-		width = 12;
-		height = 10;
-		health = 50;
-		damage = 25;
-		altitude = 999;
-		bombTimerReset = 8;
-		bombTimer = random.nextFloat()*bombTimerReset+5; //start with longer timer.
-		dead = false;
-		inSquad = false;
-		oa = new OrbitalAngle(0.0f);
-		vel = new Vector2(0,0);
-		dis2orbit = altitude;
-		this.speedMul = speedMul;
-		this.targetSpeed = speedMul;
-		targetTimer = random.nextFloat() * 25;
-		rotationSpeed = 0;
-		targetPos = pos.cpy();
+		this.shipType = Constants.SHIP_TYPES.BASIC_SPACE_INVADER;
+
+		this.width  = 12;
+		this.height = 10;
+		this.health = 60;
+		this.damage = 10;
+		this.orbitalRange = orbitalRange;
+		this.bombTimerReset = 8;
+		this.bombTimer = RandomUtil.nextFloat()*bombTimerReset;
+		this.targetTimer = RandomUtil.nextFloat() * 25;
+
 		setNewTarget();
 
 		animation = new MyAnimation("ShipTestShip",1,pos,rotation,true,200/6,width);
 
 	}
 
-	private void setNewTarget() {
-		targetPos = pos.cpy().nor();
-		targetPos.scl(100 + random.nextInt(25));
-		targetSpeed = (4 + random.nextFloat())*4;
-		targetSpeed = random.nextBoolean() ? targetSpeed : -targetSpeed;
+	@Override
+	public void update(BasicLevel basicLevel, float delta) {
+		updateTimers(delta);
+		updateTargetPos(delta);
+		updatePos(delta);
+		performAction();
+		fire(basicLevel.hostileProjectiles);
+		if(!inSquad)
+			attemptToJoinSquad(basicLevel.enemySquads);
 	}
 
 	@Override
+	public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
+		shapeRenderer.identity();
+		shapeRenderer.translate(pos.x, pos.y, 0);
+		shapeRenderer.setColor(1-(health/50),0,health/50,1);
+		shapeRenderer.rotate(0, 0, 1, rotation);
+		shapeRenderer.rect(-width/2,-height/2, width, height);
+	}
+
+	private void setNewTarget() {
+		targetPos = pos.cpy().nor();
+		targetPos.scl(orbitalRange + RandomUtil.nextInt(25));
+		targetSpeed = 7 + RandomUtil.nextFloat2()*2;
+		targetSpeed = RandomUtil.nextBoolean() ? targetSpeed : -targetSpeed;
+	}
+
 	public void performAction() {
 		if(!inSquad) {
 			if (targetTimer <= 0) {
-				targetTimer += random.nextFloat() * 10;
+				targetTimer += RandomUtil.nextFloat() * 10;
 				setNewTarget();
 			}
 		}
 	}
 
-	@Override
 	public void updateTimers(float delta){
 		bombTimer -= delta;
 		if(!inSquad)
 			targetTimer -= delta;
 	}
 
-	@Override
-	public void removeFromSquad() {
-
-		if (inSquad){
-			squad.removeShipFromSquad(this);
-			inSquad = false;
-			if(!squad.dead)
-				squad.reorganizeZone(sqPlace.zone);
-		}
-	}
-
-	@Override
-	public void joinSquad(Squad sq){
-
-		if (!sq.dead && !inSquad && !sq.full()){
-			if (sq.fillNextSidePlace(this)) {
-				inSquad = true;
-				squad = sq;
-			}
-		}
-	}
-
-	@Override
 	public void updateTargetPos(float delta){
 
 		if(inSquad) {
 			targetPos = squad.pos.cpy().nor();
-			targetPos.rotate(sqPlace.angleOffset);
+			targetPos.rotateDeg(sqPlace.angleOffset);
 			targetPos.scl(sqPlace.heightOffset + height / 2);
 		} else {
-			targetPos.rotate(targetSpeed * delta);
+			targetPos.rotateDeg(targetSpeed * delta);
 		}
 	}
 
-	@Override
 	public void updatePos(float delta) {
 		prevPos = pos.cpy();
 		pos.lerp(targetPos, (float) (1-Math.pow(0.1, delta)));
-		rotation = pos.angle() + 90;
+		rotation = pos.angleDeg() + 90;
 		vel = pos.cpy().sub(prevPos);
 	}
 
-	@Override
 	public void fire(Collection<WeaponProjectile> hostileProjectiles) {
 		if(bombTimer <= 0) {
-			bombTimer += bombTimerReset + random.nextFloat()*bombTimerReset;
-			Bomb bomb = new Bomb(pos.x, pos.y, 1, damage);
+			bombTimer += bombTimerReset + RandomUtil.nextFloat()*bombTimerReset;
+			Bomb bomb = new Bomb(pos.cpy(),1, damage, 0.7f);
 			hostileProjectiles.add(bomb);
 		}
 	}

@@ -8,7 +8,6 @@ import com.neowise.game.util.Constants;
  */
 public class GameObject {
 
-    public Constants.GameObjectTypes type;
     public Vector2 pos, vel, acc, impulse;
     public float mass;
 

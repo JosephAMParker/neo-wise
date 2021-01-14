@@ -23,18 +23,7 @@ public class BackgroundObject {
         this.scaleMul = scaleMul;
         this.speed = speed*speedMul;
 
-        this.sprite = com.neowise.game.draw.DrawingBoard.atlas.createSprite(atlasKey);
-
-    }
-
-    public BackgroundObject(Vector2 pos, float speed, float speedMul, String atlasKey) {
-
-        this.pos = pos;
-        this.atlasKey = atlasKey;
-        this.speedMul = speedMul;;
-        this.speed = speed*speedMul;
-
-        this.sprite = com.neowise.game.draw.DrawingBoard.atlas.createSprite(atlasKey);
+        this.sprite = DrawingBoard.atlas.createSprite(atlasKey);
 
     }
 

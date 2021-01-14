@@ -1,35 +1,36 @@
 package com.neowise.game.gameObject.ship;
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.neowise.game.draw.MyAnimation;
 import com.neowise.game.gameObject.weaponProjectile.Lava;
+import com.neowise.game.gameObject.weaponProjectile.LavaBomb;
 import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
+import com.neowise.game.main.BasicLevel;
+import com.neowise.game.util.Constants;
 import com.neowise.game.util.OrbitalAngle;
 import com.neowise.game.squad.Squad;
 
 import java.util.Collection;
 
-public class Ship_TestLargeShip extends Ship{
+public class Ship_TestLargeShip extends ShipRectangle{
 	
 	boolean swoop;
 	float dis2orbit;
 	public float lavaTimer,lavaTimerReset;
 	int lava;
 
-	public Ship_TestLargeShip(float x, float y) {
-		super(x, y);
+	public Ship_TestLargeShip(Vector2 pos) {
 
-		resWorth = 80;
-		mass = 2;         
-		width = 30;       
-		height = 20;      
-		health = 150;
+		super(pos);
+
+		this.shipType = Constants.SHIP_TYPES.LARGE_SPACE_INVADER;
+
+		this.width = 30;
+		this.height = 20;
+		this.health = 150;
 		damage = 50;
-		altitude = 999;
-		dead = false;
-		inSquad = false;
-		oa = new OrbitalAngle(0.0f);
-		vel = new Vector2(0,0);
 		lava = 0;
 		lavaTimerReset = 10;
 		lavaTimer = 3;
@@ -38,64 +39,49 @@ public class Ship_TestLargeShip extends Ship{
 		dis2orbit = altitude;
 		animation = new MyAnimation("ShipTestShip",1,pos,rotation,true,200/6,width);
 	}
-	
+
 	@Override
-	public void removeFromSquad() {
-		
-		if (inSquad){
-			squad.dead = true;
-			squad.removeAllShips();
-			inSquad = false;
-		}
+	public void update(BasicLevel basicLevel, float delta) {
+		updateTimers(delta);
+		updateTargetPos(delta);
+		updatePos(delta);
+		fire(basicLevel.hostileProjectiles);
+		if(!inSquad)
+			attemptToJoinSquad(basicLevel.enemySquads);
 	}
-	
+
 	@Override
-	public void joinSquad(Squad sq){
-		
-		if (!inSquad){
-			squad = sq;
-			if(sq.fillNextCenterPlace(this))
-				inSquad = true;
-			else
-				squad = null;
-		}
+	public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
+		shapeRenderer.identity();
+		shapeRenderer.translate(pos.x, pos.y, 0);
+		shapeRenderer.setColor(1-(health/50),0,health/50,1);
+		shapeRenderer.rotate(0, 0, 1, rotation);
+		shapeRenderer.rect(-width/2,-height/2, width, height);
 	}
-	
-	@Override
+
 	public void updateTimers(float delta){
 		lavaTimer -= delta;
 	}
 
-	@Override
 	public void updateTargetPos(float delta) {
 		if(inSquad) {
 			targetPos = squad.pos.cpy().nor();
-			targetPos.rotate(sqPlace.angleOffset);
+			targetPos.rotateDeg(sqPlace.angleOffset);
 			targetPos.scl(sqPlace.heightOffset + height / 2);
 		}
 	}
 
-	@Override
 	public void updatePos(float delta) {
 		prevPos = pos.cpy();
-		pos = targetPos.cpy();
-		rotation = pos.angle() + 90;
+		pos.lerp(targetPos, (float) (1-Math.pow(0.1, delta)));
+		rotation = pos.angleDeg() + 90;
 		vel = pos.cpy().sub(prevPos);
 	}
 
-	@Override
-	public void performAction() {
-		if(lavaTimer <= 0) {
-			lava = 60;
-			lavaTimer += lavaTimerReset;
-		}
-	}
-
-	@Override
 	public void fire(Collection<WeaponProjectile> hostileProjectiles) {
-		if(lava > 0){
-			hostileProjectiles.add(new Lava(pos.x, pos.y, 2));
-			lava--;
+		if(lavaTimer <= 0){
+			lavaTimer += lavaTimerReset;
+			hostileProjectiles.add(new LavaBomb(pos.cpy()));
 		}
 	}
 }

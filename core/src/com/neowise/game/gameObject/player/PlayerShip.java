@@ -3,18 +3,23 @@ package com.neowise.game.gameObject.player;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.math.Vector2;
-import com.neowise.game.main.LevelInfo;
+import com.neowise.game.LevelInfo.LevelInfo;
+import com.neowise.game.gameObject.explosion.Explosion;
+import com.neowise.game.gameObject.pickup.PowerUp;
+import com.neowise.game.gameObject.player.Weapon.CityDefender;
+import com.neowise.game.main.BasicLevel;
 import com.neowise.game.util.OrbitalAngle;
-import com.neowise.game.gameObject.weaponProjectile.Weapon;
+import com.neowise.game.gameObject.player.Weapon.Weapon;
 import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
-import com.neowise.game.gameObject.weaponProjectile.Weapon_ShotGun;
+import com.neowise.game.gameObject.player.Weapon.ShotGun;
 import com.neowise.game.gameObject.RectangleGameObject;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 public class PlayerShip extends RectangleGameObject {
 	
-	public static final float width = 6;
+	public static final float width = 8;
 	public static final float height = 3;
 	private static final Vector2 startPos = new Vector2(10,900);
 	public float altitude;
@@ -23,7 +28,6 @@ public class PlayerShip extends RectangleGameObject {
 	public float bulletCoolDown = 0;
 	public boolean shootWeapon;
 	public float health,mass;
-	public OrbitalAngle oa;
 	private float jetSpeed;
 	private float maxJetSpeed;
 	public boolean shootBullet,shootRocket,shootCityBomb;
@@ -31,14 +35,14 @@ public class PlayerShip extends RectangleGameObject {
 	public boolean detonateBombs;
 	public boolean flyToPosition;
 	private boolean accelerate;
+	private boolean fireWeaponPressed;
 
-	private Weapon currentWeapon;
+	public Weapon currentWeapon;
 
 	public PlayerShip(float x, float y){
 		
 		pos = startPos.cpy();
 		vel = new Vector2(0,0);
-		oa = new OrbitalAngle(0.0f);
 		shootWeapon	= false;
 		shootBullet = false;
 		shootRocket = false;
@@ -55,8 +59,7 @@ public class PlayerShip extends RectangleGameObject {
 		jetSpeed = 50f;
 		maxJetSpeed = 75f;
 		accelerate = false;
-
-		currentWeapon = new Weapon_ShotGun();
+		currentWeapon = new ShotGun();
 		
 	}
 
@@ -64,7 +67,6 @@ public class PlayerShip extends RectangleGameObject {
 
 		pos = startPos.cpy();
 		vel = new Vector2(0,0);
-		oa = new OrbitalAngle(0.0f);
 
 		shootBullet = false;
 		shootRocket = false;
@@ -81,29 +83,39 @@ public class PlayerShip extends RectangleGameObject {
 	}
 
 	public void movePlayer(Vector2 moveDir, float delta){
-
-		//vel.add(toPlanet.cpy().rotate(-90).scl(jetSpeed * delta));
-		//accelerate = true;
-
 		jetSpeed = 20;
 		moveDir.scl(delta * jetSpeed);
 		vel.add(moveDir);
 	}
 
-	public void goLeft(Vector2 toPlanet, float delta){
+	private void goLeft(Vector2 toPlanet, float delta){
 		movePlayer(toPlanet.rotate90(1), delta);
 	}
 
-	public void goRight(Vector2 toPlanet, float delta){
+	private void goRight(Vector2 toPlanet, float delta){
 		movePlayer(toPlanet.rotate90(-1), delta);
 	}
 
+	private void handleFirePress(){
+
+		fireWeaponPressed = true;
+
+		if(!cityBombActive && bulletCoolDown <= 0)
+			shootWeapon = true;
+
+		if(cityBombActive)
+			detonateBombs = true;
+	}
+
 	public void getInput(float delta){
+
+
 
 		if(flyToPosition) return;
 		
 		Vector2 toPlanet = pos.cpy().nor();
 		accelerate = false;
+		fireWeaponPressed = false;
 		
 		if (Gdx.input.isKeyPressed(Keys.A))
 			goLeft(toPlanet, delta);
@@ -111,10 +123,8 @@ public class PlayerShip extends RectangleGameObject {
 		if (Gdx.input.isKeyPressed(Keys.D))
 			goRight(toPlanet, delta);
 
-		if (Gdx.input.isKeyJustPressed(Keys.SPACE)) {
-			if(bulletCoolDown <= 0) {
-				shootWeapon = true;
-			}
+		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
+			handleFirePress();
 		}
 		
 		for (int i = 0;i<5;i++){
@@ -131,9 +141,7 @@ public class PlayerShip extends RectangleGameObject {
 						goRight(toPlanet, delta);
 					
 					else{
-						if(bulletCoolDown <= 0) {
-							shootWeapon = true;
-						}
+						handleFirePress();
 					}
 				}
 			}
@@ -142,24 +150,11 @@ public class PlayerShip extends RectangleGameObject {
 
 	public void updatePos(float delta){
 		Vector2 toPlanet = pos.cpy().nor().scl(-1);
-		rotation = (toPlanet.angle() + 90) % 360;
+		rotation = (toPlanet.angleDeg() + 90) % 360;
 
 		pos.add(vel);
-
+		vel.clamp(0, 50);
 		pos.clamp(orbitalRange, orbitalRange);
-	}
-	
-	/**
-	 * rotates the player in space to match the rotation of the planet its resting on
-	 * @param rotation
-	 */
-	public void rotateByPlanet(double rotation, Vector2 PlanetPos) {
-		
-		pos.sub(PlanetPos);
-		Vector2 newPos = new Vector2();
-		newPos.x  = (float) (pos.x * Math.cos(rotation - Math.PI*2) - pos.y  * Math.sin(rotation - Math.PI*2));
-		newPos.y = (float) (pos.x * Math.sin(rotation - Math.PI*2) + pos.y * Math.cos(rotation - Math.PI*2));
-		pos = newPos.add(PlanetPos);
 	}
 	
 	public Vector2 getVel() {
@@ -190,15 +185,18 @@ public class PlayerShip extends RectangleGameObject {
 	}
 
 	public void updateTimers(float delta) {
-
-		if (bulletCoolDown > 0)
-			bulletCoolDown -= delta;
-
+		currentWeapon.updateTimers(delta);
 	}
 
-	public Collection<? extends WeaponProjectile> fire(Vector2 up, float delta) {
-		shootWeapon = false;
-		vel.add(currentWeapon.recoil(up.cpy().scl(delta)));
-		return currentWeapon.fire(pos,up.cpy());
+	public void fire(BasicLevel basicLevel) {
+		currentWeapon.fire(pos, fireWeaponPressed, basicLevel);
 	}
+
+    public void update(BasicLevel basicLevel, float delta) {
+		updateTimers(delta);
+		getInput(delta);
+		updatePos(delta);
+		drag(delta);
+		fire(basicLevel);
+    }
 }

@@ -10,10 +10,11 @@ public class DesktopLauncher {
 		config.title = "Neo Wise";
 
 		config.width = 500;
-		config.height = 700;
+		config.height = 800;
 		config.resizable = false;
 		config.backgroundFPS = 30;
 		config.foregroundFPS = 30;
+		config.forceExit = false;
 		new LwjglApplication(new NeoWiseGame(), config);
 	}
 }

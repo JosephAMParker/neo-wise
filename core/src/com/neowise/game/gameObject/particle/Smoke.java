@@ -9,7 +9,7 @@ import java.util.Random;
 /**
  * Created by tabletop on 6/21/15.
  */
-public class Smoke {
+public class Smoke{
 
     Vector2 pos;
     Random random;

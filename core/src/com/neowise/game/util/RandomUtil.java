@@ -17,7 +17,15 @@ public class RandomUtil {
         return random.nextFloat();
     }
 
+    public static float nextFloat2() { return (random.nextFloat() - 0.5f) * 2; }
+
     public static boolean nextBoolean(){
         return random.nextBoolean();
+    }
+
+    public static int nextOne() {
+        if(random.nextBoolean())
+            return 1;
+        return -1;
     }
 }

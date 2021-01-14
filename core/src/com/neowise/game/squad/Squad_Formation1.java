@@ -2,50 +2,97 @@ package com.neowise.game.squad;
 
 import com.badlogic.gdx.math.Vector2;
 import com.neowise.game.gameObject.ship.Ship;
+import com.neowise.game.util.Constants;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Squad_Formation1 extends Squad {
 
 	float flipTimer = 0;
 	float flipTimerReset = 5;
+	private final Set<Constants.SHIP_TYPES> ALLOWED_SHIPS = new HashSet<>();
 
 	int numL,numR,numC;
 	SquadPlace l1,l2,l3,l4,a,r1,r2,r3,r4;
 	Ship[] ships;
 
-	public Squad_Formation1(Vector2 pos) {
+	public Squad_Formation1(Vector2 pos, float orbitalRange) {
+
 		super(pos);
-		float scale = 2f;
+
+		float scale = orbitalRange/200;
 		rotationSpeed = 10;
 		maxRotationSpeed = 10;
-		ships = new com.neowise.game.gameObject.ship.Ship[9];
-		a  = new SquadPlace(false,scale * 0  ,scale * 65, (short) 1);
-		l1 = new SquadPlace(false,scale * -7.5f,scale * 65, (short) 0);
-		l2 = new SquadPlace(false,scale * -15,scale * 65, (short) 0);
-		l3 = new SquadPlace(false,scale * -7.5f ,scale * 75, (short) 0);
-		l4 = new SquadPlace(false,scale * -15,scale * 75, (short) 0);
-		r1 = new SquadPlace(false,scale * 7.5f, scale * 65, (short) 2);
-		r2 = new SquadPlace(false,scale * 15 ,scale * 65, (short) 2);
-		r3 = new SquadPlace(false,scale * 7.5f, scale * 75, (short) 2);
-		r4 = new SquadPlace(false,scale * 15 ,scale * 75, (short) 2);
+		this.orbitalRange = orbitalRange;
+		ships = new Ship[9];
+
+		a  = new SquadPlace(false,scale * 0  ,scale * 1 + orbitalRange, (short) 1);
+		l1 = new SquadPlace(false,scale * -7.5f,scale * 1 + orbitalRange, (short) 0);
+		l2 = new SquadPlace(false,scale * -15,scale * 1 + orbitalRange, (short) 0);
+		l3 = new SquadPlace(false,scale * -7.5f ,scale * 15 + orbitalRange, (short) 0);
+		l4 = new SquadPlace(false,scale * -15,scale * 15 + orbitalRange, (short) 0);
+		r1 = new SquadPlace(false,scale * 7.5f, scale * 1 + orbitalRange, (short) 2);
+		r2 = new SquadPlace(false,scale * 15 ,scale * 1 + orbitalRange, (short) 2);
+		r3 = new SquadPlace(false,scale * 7.5f, scale * 15 + orbitalRange, (short) 2);
+		r4 = new SquadPlace(false,scale * 15 ,scale * 15 + orbitalRange, (short) 2);
+
+		ALLOWED_SHIPS.add(Constants.SHIP_TYPES.BASIC_SPACE_INVADER);
+		ALLOWED_SHIPS.add(Constants.SHIP_TYPES.LARGE_SPACE_INVADER);
 	}
-	
+
 	@Override
+	public void update(float delta) {
+		updateTimers(delta);
+		updatePos(delta);
+		changeDirection();
+	}
+
+	@Override
+	public boolean toRemove() {
+		return dead || empty();
+	}
+
+	@Override
+	public boolean canJoinSquad(Ship ship) {
+		return !dead && !full() && ALLOWED_SHIPS.contains(ship.shipType);
+	}
+
+	@Override
+	public void joinSquad(Ship ship) {
+
+		switch (ship.shipType){
+			case BASIC_SPACE_INVADER : {
+				if(fillNextSidePlace(ship)) {
+					ship.inSquad = true;
+					ship.squad = this;
+				}
+				break;
+			}
+
+			case LARGE_SPACE_INVADER : {
+				if(fillNextCenterPlace(ship)) {
+					ship.inSquad = true;
+					ship.squad = this;
+				}
+				break;
+			}
+		}
+	}
+
 	public boolean empty(){
 		return numR == 0 && numL == 0 && numC == 0;
 	}
-	
-	@Override 
+
 	public boolean full() {
 		return numR == 4 && numL == 4;
 	}
 
-	@Override
 	public void updateTimers(float delta) {
 		flipTimer -= delta;
 	}
 
-	@Override
-	public void performAction(float delta) {
+	public void changeDirection() {
 
 		if(flipTimer <= 0) {
 			flipTimer += flipTimerReset;
@@ -53,24 +100,14 @@ public class Squad_Formation1 extends Squad {
 		}
 	}
 
-	@Override
 	public void updatePos(float delta){
-
 		Vector2 toPlanet = pos.cpy().nor().scl(-1);
-		oa.angle = 360-toPlanet.angle();
-		altitude = pos.len();
-		float dis2orbit = altitude - 60;
-		toPlanet.nor();
-
-		pos.lerp(pos.cpy().add(toPlanet.cpy().scl(dis2orbit)), 0.025f);
-
-		toPlanet.rotate(90);
+		toPlanet.rotateDeg(90);
 		toPlanet.scl(delta * rotationSpeed);
-
 		pos.add(toPlanet);
+		pos.clamp(orbitalRange, orbitalRange);
 	}
-	
-	@Override
+
 	public void openPlace(Ship ship) {
 		
 		ship.sqPlace.filled = false;
@@ -84,6 +121,17 @@ public class Squad_Formation1 extends Squad {
 	
 	@Override
 	public void removeShipFromSquad(Ship ship) {
+		_removeShipFromSquad(ship);
+		reorganizeZone(ship.sqPlace.zone);
+		if(ship.sqPlace.zone == 1)
+			removeAllShips();
+
+		if(empty())
+			dead = true;
+	}
+
+	public void _removeShipFromSquad(Ship ship) {
+
 
 		ship.sqPlace.filled = false;
 		ship.inSquad = false;
@@ -92,16 +140,15 @@ public class Squad_Formation1 extends Squad {
 			case 1 : numC--; break;
 			case 2 : numR--; break;
 		}
-		
+
 		for (int i = 0;i < ships.length; i++){
 			if (ships[i] == ship) {
 				ships[i] = null;
-				return;
+				break;
 			}
 		}
 	}
-	
-	@Override
+
 	public void removeAllShips() {
 		
 		for (int i = 0;i < ships.length; i++){
@@ -116,8 +163,7 @@ public class Squad_Formation1 extends Squad {
 		numR = 0;
 		numC = 0;
 	}
-	
-	@Override
+
 	public void reorganizeZone(int zone){
 		
 		Ship tmpShip;
@@ -125,21 +171,21 @@ public class Squad_Formation1 extends Squad {
 			case 0: {
 				if (ships[3] != null){
 					tmpShip = ships[3];
-					removeShipFromSquad(tmpShip);
+					_removeShipFromSquad(tmpShip);
 					tmpShip.joinSquad(this);
 					return;
 				}
 
 				if (ships[2] != null){
 					tmpShip = ships[2];
-					removeShipFromSquad(tmpShip);
+					_removeShipFromSquad(tmpShip);
 					tmpShip.joinSquad(this);
 					return;
 				}
 
 				if (ships[1] != null){
 					tmpShip = ships[1];
-					removeShipFromSquad(tmpShip);
+					_removeShipFromSquad(tmpShip);
 					tmpShip.joinSquad(this);
 					return;
 				}
@@ -148,29 +194,28 @@ public class Squad_Formation1 extends Squad {
 			case 2: {
 				if (ships[8] != null){
 					tmpShip = ships[8];
-					removeShipFromSquad(tmpShip);
+					_removeShipFromSquad(tmpShip);
 					tmpShip.joinSquad(this);
 					return;
 				}
 
 				if (ships[7] != null){
 					tmpShip = ships[7];
-					removeShipFromSquad(tmpShip);
+					_removeShipFromSquad(tmpShip);
 					tmpShip.joinSquad(this);
 					return;
 				}
 
 				if (ships[6] != null){
 					tmpShip = ships[6];
-					removeShipFromSquad(tmpShip);
+					_removeShipFromSquad(tmpShip);
 					tmpShip.joinSquad(this);
 					return;
 				}
 			} break;
 		}
 	}
-	
-	@Override
+
 	public boolean fillNextCenterPlace(Ship ship) {
 		
 		if (numC == 0){
@@ -183,8 +228,7 @@ public class Squad_Formation1 extends Squad {
 		
 		return false;
 	}
-	
-	@Override
+
 	public boolean fillNextSidePlace(Ship ship) {
 		
 		if (numL <= numR) {
@@ -250,67 +294,7 @@ public class Squad_Formation1 extends Squad {
 				ships[8] = ship;
 				return true;
 			}
-			
 		}
 		return false;
-		
-
 	}
-	
-	@Override
-	public SquadPlace nextSidePlace() {
-		
-		if (numL <= numR) {
-			
-			numL++;
-			if (!l1.filled) {
-				l1.filled = true;
-				return l1;
-			}
-			
-			if (!l2.filled) {
-				l2.filled = true;
-				return l2;
-			}
-			
-			if (!l3.filled) {
-				l3.filled = true;
-				return l3;
-			}
-			
-			if (!l4.filled) {
-				l4.filled = true;
-				return l4;
-			}
-		}
-		
-		else {
-			
-			numR++;
-			if (!r1.filled) {
-				r1.filled = true;
-				return r1;
-			}
-			
-			if (!r2.filled) {
-				r2.filled = true;
-				return r2;
-			}
-			
-			if (!r3.filled) {
-				r3.filled = true;
-				return r3;
-			}
-			
-			if (!r4.filled) {
-				r4.filled = true;
-				return r4;
-			}
-			
-		}
-		return null;
-
-	}
-
-
 }

@@ -5,7 +5,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.neowise.game.draw.MyAnimation;
 import com.neowise.game.gameObject.defender.CityBombTurret;
 import com.neowise.game.gameObject.defender.Defender;
+import com.neowise.game.gameObject.ship.Ship;
 import com.neowise.game.homeBase.HomeBase;
+import com.neowise.game.main.BasicLevel;
 
 import java.util.Collection;
 
@@ -32,19 +34,13 @@ public class TurretCityBomb extends WeaponProjectile {
         vel = toTarget.sub(pos).nor().scl(speed);
     }
 
-    public void updatePos(float delta) {
-
-        pos.add(vel.cpy().scl(delta));
-
-    }
-
-    @Override
-    public void update(float delta, HomeBase homeBase, Collection<Defender> friendlyTurrets, Collection<MyAnimation> animations) {
-
-    }
-
     @Override
     public void dispose() {
+
+    }
+
+    @Override
+    public void update(BasicLevel basicLevel, float delta) {
 
     }
 

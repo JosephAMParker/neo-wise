@@ -1,17 +1,20 @@
 package com.neowise.game.gameObject.ship;
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
+import com.neowise.game.main.BasicLevel;
 import com.neowise.game.squad.Squad;
 
-public class Ship_LargeBomber extends Ship{
+public class Ship_LargeBomber extends ShipRectangle {
 	
 	boolean swoop;
 	float dis2orbit,dis2orbitk1,dis2orbitk2, integral, derivative;
 	float KD,KI,KP;
 
-	public Ship_LargeBomber(float x, float y) {
+	public Ship_LargeBomber(Vector2 pos) {
 		
-		super(x, y);
+		super(pos);
 		
 		mass = 2;         
 		width = 45;       
@@ -19,9 +22,8 @@ public class Ship_LargeBomber extends Ship{
 		health = 150;      
 		altitude = 999;   
 		dead = false;    
-		inSquad = false; 
-		
-		pos = new Vector2(x,y);
+		inSquad = false;
+
 		vel = new Vector2(0,0);
 		
 		swoop = false;
@@ -35,7 +37,6 @@ public class Ship_LargeBomber extends Ship{
 		
 	}
 
-	@Override
 	public void updateTargetPos(float delta) {
 		targetPos = pos.cpy();
 	}
@@ -43,11 +44,24 @@ public class Ship_LargeBomber extends Ship{
 	@Override
 	public void joinSquad(Squad sq){
 		squad = sq;
-		sqPlace = sq.nextCenterPlace();
+		//sqPlace = sq.nextCenterPlace();
 		inSquad = false;
 	}
-	
+
 	@Override
+	public void update(BasicLevel basicLevel, float delta) {
+
+	}
+
+	@Override
+	public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
+		shapeRenderer.identity();
+		shapeRenderer.translate(pos.x, pos.y, 0);
+		shapeRenderer.setColor(1-(health/50),0,health/50,1);
+		shapeRenderer.rotate(0, 0, 1, rotation);
+		shapeRenderer.rect(-width/2,-height/2, width, height);
+	}
+
 	public void updateVel(Vector2 HBPos) {
 		
 		Vector2 toPlanet =  (HBPos).sub(pos);

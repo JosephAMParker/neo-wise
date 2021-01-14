@@ -5,6 +5,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.assets.AssetManager;
+import com.neowise.game.LevelInfo.LevelInfo;
+import com.neowise.game.draw.DrawingBoard;
 import com.neowise.game.menu.StarMap;
 import com.neowise.game.gameObject.player.PlayerShip;
 import com.neowise.game.homeBase.HomeBase;
@@ -32,6 +34,7 @@ public class NeoWiseGame extends Game {
         batch = new SpriteBatch();
         font = new BitmapFont();
         manager = new AssetManager();
+        DrawingBoard.initAtlas();
         this.setScreen(new MainMenuScreen(this));
 
     }
@@ -54,7 +57,7 @@ public class NeoWiseGame extends Game {
     }
 
     public void createNewHomeBase(){
-        homeBase = new HomeBase(0,0,100);
+        homeBase = new HomeBase(200);
     }
 
     public PlayerShip getPlayerShip() {

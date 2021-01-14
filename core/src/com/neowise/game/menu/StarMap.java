@@ -6,13 +6,18 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
+import com.neowise.game.LevelInfo.CityDefenderLevelInfo;
+import com.neowise.game.LevelInfo.SpaceInvadersLevelInfo;
 import com.neowise.game.main.BasicLevel;
 import com.neowise.game.main.GameLevelObject;
-import com.neowise.game.main.LevelInfo;
+import com.neowise.game.LevelInfo.LevelInfo;
 import com.neowise.game.main.NeoWiseGame;
 import com.neowise.game.physics.CollisionDetector;
+import com.neowise.game.util.Constants;
+import com.neowise.game.util.RandomUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,7 +34,10 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
     private int currentLevel;
     private int maxReach;
     private StarMapNode currentNode;
-    private Random random;
+    private float nodeHeight;
+    private float planetRadius;
+    private boolean introCameraPan;
+    private float cameraPanSpeed;
 
     public Color bgColor = new Color(0.01f,0.01f,0.02f,1);
 
@@ -43,15 +51,29 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         currentLevel = 0;
         maxReach = 2;
         currentNode = null;
-        random = new Random();
         playerPath = new StarMapNode[numberOfLevels];
+        nodeHeight = h/6;
+        planetRadius = 500;
+        introCameraPan = true;
+        cameraPanSpeed = 0;
 
         initMap();
 
     }
 
+    @Override
+    public void initializeCamera() {
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, w, h);
+        camera.update();
+        hudRenderer   = new ShapeRenderer();
+        hudRenderer.setProjectionMatrix(camera.combined);
+        camera.translate(0, h + 150);
+    }
+
     private void goToSelectedLevel(StarMapNode node){
         BasicLevel level = new BasicLevel(game);
+        node.levelInfo.setBasicLevel(level);
         game.setScreen(level);
         level.setInput();
     }
@@ -107,6 +129,10 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
                 }
             }
         }
+
+        shapeRenderer.setColor(Color.BLUE);
+        shapeRenderer.circle(w/2, numberOfLevels * nodeHeight + planetRadius - 100, planetRadius);
+
         shapeRenderer.end();
     }
 
@@ -116,7 +142,8 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        //checkForLevelSelect();
+        updateCamera();
+        updateTimers(delta);
         drawMap();
 
         if(reset) {
@@ -124,13 +151,34 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
             initMap();
         }
 
+        if(introCameraPan){
+            panCamera();
+        }
+
+    }
+
+    private void updateTimers(float delta){
+        totalTime += delta;
+    }
+
+    private void panCamera(){
+
+        camera.position.y = 100;
+
+        if(totalTime > 1) {
+            camera.translate(0, cameraPanSpeed, 0);
+            //if(camera.position.y <= )
+            cameraPanSpeed -= 0.1;
+            if (camera.position.y <= 150)
+                introCameraPan = false;
+        }
     }
 
     /**
      * @return -1, 0 or 1
      */
     private int randomIncrement(){
-        return random.nextInt(3) - 1;
+        return RandomUtil.nextInt(3) - 1;
     }
 
     /**
@@ -214,7 +262,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         switch (dir) {
             case 0 : {
                 if(isReachable(bottomNodes,topNodes,bottomIndex, bottomIndex)) return bottomIndex;
-                if(random.nextInt(1) == 1) {
+                if(RandomUtil.nextInt(1) == 1) {
                     int l = searchLeft(bottomNodes, topNodes, bottomIndex);
                     if (l >= 0) return l;
                     int r = searchRight(bottomNodes, topNodes, bottomIndex);
@@ -260,7 +308,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
 
         ArrayList<Integer> bottomNodeIndexs = new ArrayList<Integer>();
 
-        int numberOfNodes = random.nextInt(4) + 3;
+        int numberOfNodes = RandomUtil.nextInt(4) + 3;
         int prevNumberOfNodes = 0;
         int numberOfExtraBranches = 0;
 
@@ -268,9 +316,9 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
 
         //set up 'numberOfNodes' # of star nodes in prevNodes array;
         for(int j=0; j<numberOfNodes; j++){
-            int pos = random.nextInt(places.size());
+            int pos = RandomUtil.nextInt(places.size());
             int index = places.remove(pos);
-            StarMapNode sNode = new StarMapNode(0, index,true);
+            StarMapNode sNode = new StarMapNode(0, index, Constants.GAME_MODE.SPACE_INVADERS, true);
             sNode.playable = true;
             prevNodes[index] = sNode;
             bottomNodeIndexs.add(index);
@@ -292,7 +340,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
             }
 
             numberOfNodes = Math.min(Math.max(3, prevNumberOfNodes + randomIncrement()), mapWidth/2);
-            numberOfExtraBranches = Math.abs(numberOfNodes - prevNumberOfNodes) + random.nextInt(3);
+            numberOfExtraBranches = Math.abs(numberOfNodes - prevNumberOfNodes) + RandomUtil.nextInt(3);
             ArrayList<Integer> topNodeIndexs = new ArrayList<Integer>();
             ArrayList<Integer> bottomNodeIndexsFirstRun = new ArrayList<Integer>();
 
@@ -307,22 +355,22 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
                     int randIndex = index + randomIncrement() + randomIncrement();
                     randIndex = Math.min(mapWidth-1, randIndex);
                     randIndex = Math.max(0, randIndex);
-                    nextNodes[randIndex] = new StarMapNode(i, randIndex);
+                    nextNodes[randIndex] = new StarMapNode(i, randIndex, Constants.GAME_MODE.SPACE_INVADERS);
 //                  places.remove(places.get(index));
                     numberOfNodes--;
                 }
             }
 
             for(int j=0; j<numberOfNodes; j++){
-                int pos = random.nextInt(places.size());
+                int pos = RandomUtil.nextInt(places.size());
                 int index = places.remove(pos);
-                nextNodes[index] = new StarMapNode(i,index);
+                nextNodes[index] = new StarMapNode(i,index, Constants.GAME_MODE.SPACE_INVADERS);
             }
 
             //select a random node from prevNodes, connect to node either above, left, or right.
             bottomNodeIndexsFirstRun = (ArrayList<Integer>) bottomNodeIndexs.clone();
             for(int j=0; j<prevNumberOfNodes; j++){
-                int pos = random.nextInt(bottomNodeIndexsFirstRun.size());
+                int pos = RandomUtil.nextInt(bottomNodeIndexsFirstRun.size());
                 int bottomIndex = bottomNodeIndexsFirstRun.remove(pos);
 
                 int dir = randomIncrement(); // -1 left, 0 up, 1 right
@@ -341,7 +389,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
             }
 
             for(int j=0; j<numberOfExtraBranches; j++){
-                int pos = random.nextInt(bottomNodeIndexs.size());
+                int pos = RandomUtil.nextInt(bottomNodeIndexs.size());
                 int bottomIndex = bottomNodeIndexs.get(pos);
 
                 int dir = randomIncrement(); // -1 left, 0 up, 1 right
@@ -450,9 +498,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
                 if(node == null) continue;
                 node.selected = false;
                 if(node.playable && CollisionDetector.collisionCirclePoint(node.xPos, node.yPos,node.circleRadius+5,screenX,screenY)){
-//                    playerPath[currentLevel] = node;
                     currentNode = node;
-                    //node.selected = true;
                     goToSelectedLevel(node);
                 }
             }
@@ -468,6 +514,10 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
+
+        float y = Gdx.input.getDeltaY() * 1.5f;
+        camera.translate(0,y);
+
         return false;
     }
 
@@ -478,6 +528,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
 
     @Override
     public boolean scrolled(float amountX, float amountY) {
+        camera.position.add(0,amountY * -25,0);
         return false;
     }
 
@@ -503,30 +554,39 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         public ArrayList<StarMapNode> children;
         public LevelInfo levelInfo;
 
-        public void initStarMapNode(int level, int col){
+        public void initStarMapNode(int level, int col, Constants.GAME_MODE gameMode){
+
+            float colWidth = (w - 10) / mapWidth;
 
             this.level  = level;
             this.col    = col;
             children = new ArrayList<>();
-            circleRadius = random.nextFloat()*3+6;
-            xPos = col*40 + 34 + random.nextFloat()*12;
-            yPos = h/2 - 150 + level * 54 + random.nextFloat()*10;
+            circleRadius = RandomUtil.nextFloat()*3+12;
+
+            xPos = col*colWidth + circleRadius + 5 + RandomUtil.nextFloat()*10;
+            yPos = level * nodeHeight;
+
             selected = false;
             playable = false;
             finished = false;
 
-            levelInfo = new LevelInfo(level);
+            switch (gameMode) {
+                case CITY_DEFENDER : levelInfo = new CityDefenderLevelInfo(level); break;
+                case SPACE_INVADERS: levelInfo = new SpaceInvadersLevelInfo(level); break;
+            }
+
+            levelInfo = new SpaceInvadersLevelInfo(level);
 
         }
 
-        public StarMapNode(int level, int col) {
+        public StarMapNode(int level, int col, Constants.GAME_MODE gameMode) {
             this.isConnected = false;
-            initStarMapNode(level, col);
+            initStarMapNode(level, col, gameMode);
         }
 
-        public StarMapNode(int level, int col, boolean isConnected) {
+        public StarMapNode(int level, int col, Constants.GAME_MODE gameMode, boolean isConnected) {
             this.isConnected = isConnected;
-            initStarMapNode(level, col);
+            initStarMapNode(level, col, gameMode);
         }
 
     }

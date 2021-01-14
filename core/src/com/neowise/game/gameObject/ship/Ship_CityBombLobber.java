@@ -1,19 +1,22 @@
 package com.neowise.game.gameObject.ship;
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.neowise.game.main.BasicLevel;
+import com.neowise.game.squad.Squad;
 import com.neowise.game.util.OrbitalAngle;
 
 /**
  * Created by tabletop on 6/22/15.
  */
-public class Ship_CityBombLobber extends Ship {
+public class Ship_CityBombLobber extends ShipRectangle {
 
     float dis2orbit;
     public float bombTimer, bombTimerMax;
     public boolean shootLeft;
 
-    public Ship_CityBombLobber(float x, float y) {
-        super(x, y);
+    public Ship_CityBombLobber(Vector2 pos) {
+        super(pos);
 
         altitude = 999;
         dead = false;
@@ -36,12 +39,24 @@ public class Ship_CityBombLobber extends Ship {
     }
 
     @Override
+    public void joinSquad(Squad squad) {
+
+    }
+
+    @Override
+    public void update(BasicLevel basicLevel, float delta) {
+
+    }
+
+    @Override
+    public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
+
+    }
+
     public void updateTimers(float delta){
 
         bombTimer += delta;
     }
-
-    @Override
     public void updateVel(Vector2 HBPos) {
 
         Vector2 toPlanet = (HBPos.cpy()).sub(pos);

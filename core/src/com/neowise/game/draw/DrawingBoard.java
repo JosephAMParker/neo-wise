@@ -57,7 +57,6 @@ public class DrawingBoard {
 		
 		homeBaseTexture = new Texture(pixmap);
 		homeBaseSprite = new Sprite(homeBaseTexture);
-		//homeBaseSprite.setOrigin(homeBaseSprite.getHeight() / 2, homeBaseSprite.getHeight() / 2);
 
 		vertexShader = Gdx.files.internal("vertex.glsl");
 		fragmentShader = Gdx.files.internal("fragment.glsl");
@@ -73,11 +72,9 @@ public class DrawingBoard {
 		homeBaseBatch = new SpriteBatch();
 		homeBaseBatch.setShader(shader);
 
-
-		shader.begin();
+		shader.bind();
 		shader.setUniformi("u_texture", 0);
 		shader.setUniformi("u_mask", 1);
-		shader.end();
 
 		homeBaseTexture.bind(1);
 
@@ -87,8 +84,10 @@ public class DrawingBoard {
 		homeBaseSprites = new ArrayList();
 		spritesForeGround = new ArrayList();
 
-		atlas = new TextureAtlas(Gdx.files.internal("TextureAtlasOut/atlas.atlas"));
+	}
 
+	public static void initAtlas(){
+		atlas = new TextureAtlas(Gdx.files.internal("TextureAtlasOut/devPack.atlas"));
 	}
 	
 	public void updateTexture(Pixmap pixmap){
@@ -104,10 +103,8 @@ public class DrawingBoard {
 	}
 
 	public void drawHomeBase(float x, float y, double rotation) {
-
 		homeBaseSprite.setRotation((float) (rotation * 180 / Math.PI));
 		homeBaseSprites.add(homeBaseSprite);
-
 	}
 
 	public void setMatrix(Vector2 pos, float rotation) {
@@ -124,6 +121,14 @@ public class DrawingBoard {
 
 	}
 
+	public Collection<Sprite> getFrontSprites(){
+		return spritesForeGround;
+	}
+
+	public Collection<Sprite> getSprites(){
+		return sprites;
+	}
+
 	public void drawChunks(ArrayList<Chunk> ch) {
 
 		for (Iterator<Chunk> it = ch.iterator();it.hasNext();)
@@ -137,7 +142,6 @@ public class DrawingBoard {
 			homeBaseSprites.add(chunkSprite);
 
 		}
-		
 	}
 
 	public void draw(){
@@ -168,85 +172,17 @@ public class DrawingBoard {
 
 	}
 
-
-	public void addSpriteFromAtlas(float x, float y, String atlasKey) {
-
-		Sprite sprite = atlas.createSprite(atlasKey);
-		sprite.setPosition(x, y);
-		sprites.add(sprite);
-
+	public void addSpriteFromAtlas(float x, float y, float rotation, Sprite sprite, Collection<Sprite> spritesCollection) {
+		addSpriteFromAtlas(x, y, rotation, 1, sprite, spritesCollection);
 	}
 
-	public void addSpriteFromAtlas(float x, float y, float rotation, Sprite sprite) {
-		sprite.setOrigin(sprite.getWidth()/2, sprite.getHeight()/2);
-		sprite.setOriginCenter();
-		sprite.setRotation(0);
-		sprite.rotate(rotation);
-		sprite.setPosition(x, y);
-
-		sprites.add(sprite);
-	}
-
-	public void addSpriteFromAtlas(float x, float y, float rotation,float scale,Sprite sprite) {
+	public void addSpriteFromAtlas(float x, float y, float rotation, float scale, Sprite sprite, Collection<Sprite> spritesCollection) {
 		sprite.setOrigin(sprite.getWidth() / 2, sprite.getHeight() / 2);
 		sprite.setOriginCenter();
 		sprite.setRotation(0);
 		sprite.rotate(rotation);
 		sprite.setPosition(x, y);
 		sprite.setScale(scale);
-
-
-		sprites.add(sprite);
-	}
-
-	public void addSpriteFromAtlasToForeGround(float x, float y, float rotation,Sprite sprite) {
-		addSpriteFromAtlasToForeGround(x, y, rotation, 1, sprite);
-	}
-
-	public void addSpriteFromAtlasToForeGround(float x, float y, float rotation,float scale,Sprite sprite) {
-		sprite.setOrigin(sprite.getWidth() / 2, sprite.getHeight() / 2);
-		sprite.setOriginCenter();
-		sprite.setRotation(0);
-		sprite.rotate(rotation);
-		sprite.setPosition(x, y);
-		sprite.setScale(scale);
-
-
-		spritesForeGround.add(sprite);
-	}
-
-	public void drawProjectileShapeRenderer(WeaponProjectile fprojectile, ShapeRenderer shapeRenderer) {
-
-		if (fprojectile instanceof TurretCityBomb){
-
-			shapeRenderer.identity();
-			shapeRenderer.setColor(Color.WHITE);
-			shapeRenderer.circle(fprojectile.pos.x, fprojectile.pos.y, fprojectile.size);
-
-		}
-
-		if (fprojectile instanceof Bullet){
-
-			shapeRenderer.identity();
-			shapeRenderer.setColor(Color.WHITE);
-			shapeRenderer.circle(fprojectile.pos.x, fprojectile.pos.y, fprojectile.size);
-
-		}
-
-		if (fprojectile instanceof PlayerCityBomb){
-
-			shapeRenderer.identity();
-			shapeRenderer.setColor(Color.WHITE);
-			shapeRenderer.circle(fprojectile.pos.x, fprojectile.pos.y, fprojectile.size);
-		}
-
-		if (fprojectile instanceof Laser){
-
-			shapeRenderer.identity();
-			shapeRenderer.setColor(Color.CYAN);
-			Vector2 endLaser = fprojectile.getPos().add(fprojectile.getVel().nor().scl(((Laser) fprojectile).length));
-			shapeRenderer.rectLine(endLaser.x, endLaser.y,fprojectile.pos.x, fprojectile.pos.y, 3);
-
-		}
+		spritesCollection.add(sprite);
 	}
 }

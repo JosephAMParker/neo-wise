@@ -4,29 +4,47 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.neowise.game.LevelInfo.LevelInfo;
+import com.neowise.game.draw.ScreenShake;
+import com.neowise.game.gameObject.CityBombGroup.CityBombGroup;
 import com.neowise.game.gameObject.defender.LaserTurret;
+import com.neowise.game.gameObject.player.Weapon.ChainGun;
+import com.neowise.game.gameObject.player.Weapon.CityDefender;
+import com.neowise.game.gameObject.player.Weapon.LaserBeamGun;
+import com.neowise.game.gameObject.player.Weapon.ShotGun;
+import com.neowise.game.gameObject.ship.LaserCannonShip;
+import com.neowise.game.gameObject.ship.Orbiter;
 import com.neowise.game.gameObject.ship.Ship_TestLargeShip;
 import com.neowise.game.gameObject.ship.Ship_TestShip;
-import com.neowise.game.gameObject.weaponProjectile.PlayerCityBomb;
 import com.neowise.game.gameObject.pickup.PowerUp;
+import com.neowise.game.gameObject.ship.WeaponUpgradeShip;
+import com.neowise.game.gameObject.ship.enemy.Dart;
+import com.neowise.game.gameObject.weaponProjectile.Bullet;
+import com.neowise.game.gameObject.weaponProjectile.BulletHostile;
+import com.neowise.game.gameObject.weaponProjectile.HealthBomb;
+import com.neowise.game.gameObject.weaponProjectile.LavaBomb;
+import com.neowise.game.homeBase.HomeBase;
+import com.neowise.game.homeBase.HomeBaseCore;
 import com.neowise.game.menu.StarMap;
 import com.neowise.game.gameObject.rocket.Target;
 import com.neowise.game.draw.BackgroundObject;
 import com.neowise.game.gameObject.defender.Defender;
 import com.neowise.game.gameObject.ship.Ship;
 import com.neowise.game.gameObject.weaponProjectile.Bomb;
-import com.neowise.game.gameObject.weaponProjectile.CityBomb;
 import com.neowise.game.gameObject.weaponProjectile.Lava;
 import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
-import com.neowise.game.physics.CollisionDetector;
 import com.neowise.game.squad.Squad;
 import com.neowise.game.squad.Squad_Formation1;
-import com.neowise.game.util.OrbitalAngle;
+import com.neowise.game.util.Constants;
+import com.neowise.game.gameObject.explosion.Explosion;
+import com.neowise.game.util.RandomUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,44 +52,29 @@ import java.util.Iterator;
 
 public class BasicLevel extends GameLevelObject implements Screen, InputProcessor  {
 
-    private class BombGroup {
+    private final boolean debugMode = true;
 
-        public float bombTimer,angle,bombDropCount;
-
-        public BombGroup(float angle, int bombDropCount) {
-
-            this.angle=angle;
-            this.bombDropCount=bombDropCount;
-            bombTimer = 0;
-        }
-    }
-
-    private int resources = 0;
-    private int score     = 0;
-    private float totalTime = 0;
-    private float nextSquad = 0;
-    private float nextShip = 0;
     private float nextStar = 0;
     private float nextStarDelay = 0;
-    //private int levelComplete = false;
-    private enum GAMESTATES {LOADING, INGAME, PLAYERWIN, PLAYERLOSS}
-    private GAMESTATES gameState;
-    private enum LevelGameState {LOADING, INGAME, PLAYERWON, PLAYERLOSS, PAUSED};
-    private enum leftClickModes {SPAWN_BASIC_UNIT, SPAWN_SQUAD, SPAWN_LARGE_UNIT, ADD_TURRET, DROP_BOMB, DROP_LAVA};
+
+    private Constants.GAME_STATES gameState;
+    private enum leftClickModes {SPAWN_BASIC_UNIT, SPAWN_SQUAD, SPAWN_LARGE_UNIT, ADD_TURRET, DROP_BOMB, REMOVE_CIRCLE, SPAWN_DART_UNIT, SPAWN_FLOCK, SHOOT_BULLET, DROP_LAVA_BALL, SPAWN_LASER_UNIT, DROP_HEALTH_BALL, SPAWN_UPGRADER, DROP_LAVA};
     private leftClickModes leftClickMode = leftClickModes.DROP_BOMB;
-    private CollisionDetector collisionDetector;
-    private Collection<WeaponProjectile> friendlyProjectiles;
-    private Collection<PlayerCityBomb> friendlyCityBombs;
-    private Collection<CityBomb> hostileCityBombs;
-    private Collection<WeaponProjectile> hostileProjectiles;
-    private Collection<Defender> friendlyTurrets;
+    public Collection<WeaponProjectile> friendlyProjectiles;
+    public Collection<Explosion> friendlyExplosions;
+    public Collection<WeaponProjectile> tempHostileProjectiles;
+    public Collection<WeaponProjectile> hostileProjectiles;
+    public Collection<Defender> friendlyTurrets;
+    private Collection<CityBombGroup> bombGroups;
     private Collection<Target> targets;
-    private Collection<PowerUp> powerUps;
-    private Collection<Squad> enemySquads;
-    private Collection<Ship> ships;
-    private Collection<Bomb> bullets;
+    public Collection<PowerUp> powerUps;
+    public Collection<Squad> enemySquads;
+    public Collection<Ship> ships;
+    public Collection<Ship> deadShips;
     private LevelInfo levelInfo;
     private StarMap starMap;
+
+    public Vector3 homeBaseProject;
 
     public BasicLevel(final NeoWiseGame game) {
 
@@ -79,25 +82,29 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
 
         frontAnimations   = new ArrayList<>();
         ships             = new ArrayList<>();
+        deadShips         = new ArrayList<>();
         powerUps          = new ArrayList<>();
         middleAnimations  = new ArrayList<>();
         backAnimations    = new ArrayList<>();
-        bullets           = new ArrayList<>();
         enemySquads       = new ArrayList<>();
+        bombGroups        = new ArrayList<>();
         targets           = new ArrayList<>();
         backgroundObjects = new ArrayList<>();
         foregroundObjects = new ArrayList<>();
-        friendlyTurrets   = new ArrayList<>();
+        friendlyTurrets   = homeBase.getDefences();
 
         friendlyProjectiles = new ArrayList<>();
+        friendlyExplosions  = new ArrayList<>();
+        tempHostileProjectiles = new ArrayList<>();
         hostileProjectiles  = new ArrayList<>();
 
         levelInfo = game.getCurrentLevelInfo();
         starMap   = game.getStarMap();
-        gameState = GAMESTATES.LOADING;
+        gameState = Constants.GAME_STATES.LOADING;
 
         homeBase.goToStart(levelInfo);
         playerShip.goToStart(levelInfo);
+        playerShip.orbitalRange = homeBase.playerOrbitRange;
 
         addStars();
     }
@@ -112,8 +119,6 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
 
     private void updateTimers(float delta){
         totalTime += delta;
-        nextShip  += delta;
-        nextSquad += delta;
     }
 
     private void updateBackGroundColours(){
@@ -124,170 +129,155 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
     private void addStars(){
         //add some initial stars
         for (int i = 0; i < 80; i ++){
-            BackgroundObject star = new BackgroundObject(new Vector2((random.nextFloat()-0.5f) * 2 * h,(random.nextFloat()-0.5f) * h * 2f),0.2f,"star");
+            BackgroundObject star = new BackgroundObject(new Vector2((RandomUtil.nextFloat()-0.5f) * 2 * h,(RandomUtil.nextFloat()-0.5f) * h * 2f),0.2f,"star");
             backgroundObjects.add(star);
         }
-    }
-
-    private void checkEndLevelState(float delta){
-
-        if(homeBase.distance <= levelInfo.levelDistance)
-            gameState = GAMESTATES.PLAYERWIN;
     }
 
     @Override
     public void render(float delta) {
 
-        if(delta>maxDelta)
-            maxDelta=delta;
+        float gameDelta = delta;
 
-        delta = setGameSpeed(delta);
+        if(slow){
+            gameDelta *= 0.002;
+            delta *= 0.8;
+        }
+
         updateTimers(delta);
 
         switch (gameState) {
-
-            case LOADING    :   {renderLoading(delta);      break;  }
-            case INGAME     :   {renderMainLoop(delta);     break;  }
-            case PLAYERLOSS :   {renderPlayerLoss(delta);   break;  }
-            case PLAYERWIN  :   {renderPlayerWin(delta);    break;  }
+            case LOADING     :   {renderLoading(delta);             break;  }
+            case IN_GAME     :   {renderMainLoop(gameDelta, delta); break;  }
+            case PLAYER_LOSS :   {renderPlayerLoss(delta);          break;  }
+            case PLAYER_WIN  :   {renderPlayerWin(delta);           break;  }
         }
 
     }
-    private void renderMainLoop(float delta){
 
+    private void renderMainLoop(float delta, float playerDelta){
+
+
+
+        updateLevelInfo(delta);
         updateBackGroundColours();
         updateBackGround(delta);
         updateBackAnimations(delta);
-        updateHomeBase(delta);
-        updateFriendlyTurrets(delta);
-        updateHostileProjectiles(delta);
-        updateEnemySquads(delta);
+        updateFriendlyTurrets(playerDelta); // must be before updateHomeBase
+        updateHomeBase(delta);              // must be after updateFriendlyTurrets
         updateEnemyShips(delta);
-        updatePlayerShip(delta);
-        updateFriendlyProjectiles(delta);
+        updateEnemySquads(delta);
+        updateCityBombs(delta);
+        updateHostileProjectiles(delta);
+        updatePlayerShip(playerDelta);
+        updateFriendlyProjectiles(playerDelta);
+        updateFriendlyExplosions(playerDelta);
+        updatePowerUps(delta);
         updateMiddleAnimations(delta);
         updateFrontAnimations(delta);
         updateForeground(delta);
-        rotateCameraWithPlayer(delta);
-
-        checkEndLevelState(delta);
+        rotateCameraWithPlayer(playerDelta);
+        ScreenShake.shake(delta, camera);
+        resetCenterCamera();
+        checkLevelState();
 
         drawingBoard.draw();
 
-        //FPS draw FPS
-        game.batch.begin();
-        game.font.setColor(1f, 1f, 0.5f, 1);
-        game.font.draw(game.batch, "fps: " + Gdx.graphics.getFramesPerSecond(), 5, h - 30);
-        game.batch.end();
-        //FPS draw FPS
+        updateCamera();
 
-        //FPS draw left click mode
+
         game.batch.begin();
         game.font.setColor(1f, 1f, 0.5f, 1);
+        //draw FPS
+        game.font.draw(game.batch, "fps: " + Gdx.graphics.getFramesPerSecond(), 5, h - 30);
+        //draw left click mode
         game.font.draw(game.batch, "click: " + leftClickMode, 5, h - 50);
+        //draw health
+        game.font.draw(game.batch, "health: " + homeBase.core.health, 5, h - 70);
+        //draw weapon
+        game.font.draw(game.batch, "weapon: " + playerShip.currentWeapon.weaponType, 5, h - 90);
+        //draw number dead
+        game.font.draw(game.batch, "killed: " + deadShips.size(), 5, h - 110);
         game.batch.end();
-        //FPS draw left click mode
     }
 
+    /**
+     * after screen shake the camera may not be centered.
+     * translate camera in direction of original center of homebase.
+     */
+    public void resetCenterCamera(){
+        Vector3 n = homeBaseProject.cpy();
+        camera.unproject(n);
+        camera.translate(n.scl(-1 * 0.5f));
+    }
 
-    private void updateHostileProjectiles(float delta){
+    private void checkLevelState(){
+        gameState = levelInfo.checkLevelState(this);
+    }
 
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.identity();
-
-        for(Iterator<WeaponProjectile> it = hostileProjectiles.iterator(); it.hasNext(); ) {
-            WeaponProjectile hostileProjectile = it.next();
-
-            hostileProjectile.update(delta, homeBase, friendlyTurrets, frontAnimations);
-            hostileProjectile.renderShapeRenderer(shapeRenderer);
-            if(hostileProjectile.toRemove()) {
-                it.remove();
-                hostileProjectile.dispose();
-            }
-        }
-
-        shapeRenderer.end();
+    private void updateLevelInfo(float delta){
+        //levelInfo.update(delta);
     }
 
     private void updateEnemySquads(float delta) {
 
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.identity();
+        shapeRenderer.setColor(Color.GREEN);
         for(Iterator<com.neowise.game.squad.Squad> it = enemySquads.iterator(); it.hasNext(); ){
             Squad squad = it.next();
 
-            if (squad.empty())
-                squad.dead = true;
-
-            if (squad.dead)
+            if(squad.toRemove()){
                 it.remove();
-
-            squad.updatePos(delta);
-            squad.updateTimers(delta);
-            squad.performAction(delta);
-        }
-    }
-
-    private boolean checkEnemyShipAlive(Iterator<Ship> it, Ship ship){
-
-        if (ship.health <= 0)
-            ship.dead = true;
-
-        if(ship.dead) {
-            //destroy
-            ship.removeFromSquad();
-            ship.animation.alive = false;
-            resources += ship.resWorth;
-            it.remove();
-            return false;
-        }
-        return true;
-    }
-
-    private void attemptToJoinSquad(Ship ship) {
-        for(Iterator<Squad> sqit = enemySquads.iterator(); sqit.hasNext();){
-            Squad squad = sqit.next();
-            float distanceToSquad = OrbitalAngle.distance(ship.pos.angle(), squad.pos.angle());
-            if (Math.abs(distanceToSquad) < 30) {
-                ship.joinSquad(squad);
-                return;
+                continue;
             }
+
+            squad.update(delta);
         }
+        shapeRenderer.end();
     }
 
-    private void updateEnemyShips(float delta) {
-
+    private void updateEnemyShips(float delta){
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        for(Iterator<Ship> it = ships.iterator(); it.hasNext();) {
 
+        for(Iterator<Ship> it = ships.iterator(); it.hasNext();) {
             Ship ship = it.next();
-            if(checkEnemyShipAlive(it, ship)) {
-                ship.updateTimers(delta);
-                ship.updateTargetPos(delta);
-                ship.updatePos(delta);
-                ship.performAction();
-                ship.fire(hostileProjectiles);
-                attemptToJoinSquad(ship);
+
+            if(ship.toRemove()){
+                deadShips.add(ship);
+                ship.kill();
+                it.remove();
+                continue;
             }
 
-//          ship.animation.updatePos(ship.pos.cpy());
-//          ship.animation.rotation = ship.rotation;
+            ship.update(this, delta);
+            ship.renderShapeRenderer(shapeRenderer);
 
-            renderShipsShapeRenderer(ship, shapeRenderer);
+            //shapeRenderer.identity();
+            //shapeRenderer.circle(ship.targetPos.x, ship.targetPos.y, 2);
 
         }
         shapeRenderer.end();
     }
 
-    private void renderShipsShapeRenderer(Ship ship, ShapeRenderer shapeRenderer){
+    private void updateCityBombs(float delta){
 
-        shapeRenderer.identity();
-        shapeRenderer.translate(ship.pos.x, ship.pos.y, 0);
-        shapeRenderer.setColor(1-(ship.health/50),0,ship.health/50,1);
-        shapeRenderer.rotate(0, 0, 1, ship.rotation);
-        shapeRenderer.rect(-ship.width/2,-ship.height/2, ship.width, ship.height);
+        for(Iterator<CityBombGroup> it = bombGroups.iterator(); it.hasNext();) {
+
+            CityBombGroup cbg = it.next();
+
+            if(cbg.empty()) {
+                it.remove();
+                continue;
+            }
+
+            cbg.updateTimers(delta);
+            cbg.spawnBombs(hostileProjectiles);
+        }
     }
 
     public void renderLoading(float delta){
-        gameState = GAMESTATES.INGAME;
+        gameState = Constants.GAME_STATES.IN_GAME;
     }
     private void renderPlayerWin(float delta) {
         endLevel(delta);
@@ -297,69 +287,96 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
     }
 
     private void endLevel(float delta){
-
         starMap.endLevel();
         game.setScreen(starMap);
         starMap.setInput();
     }
 
-    private void updateFriendlyProjectiles(float delta) {
-        //TODO remove projectiles after leaving play area
-
+    private void updateProjectiles(Collection<WeaponProjectile> projectiles, float delta){
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.identity();
 
+        for(Iterator<WeaponProjectile> it = projectiles.iterator(); it.hasNext(); ) {
+            WeaponProjectile projectile = it.next();
 
-        Collection<WeaponProjectile> hitProjectiles = new ArrayList<com.neowise.game.gameObject.weaponProjectile.WeaponProjectile>();
-
-        for(Iterator<WeaponProjectile> it = friendlyProjectiles.iterator(); it.hasNext(); ) {
-
-            WeaponProjectile fprojectile = it.next();
-            drawingBoard.drawProjectileShapeRenderer(fprojectile, shapeRenderer);
-
-            for(Iterator<Ship> shit = ships.iterator(); shit.hasNext(); ){
-
-                Ship ship = shit.next();
-                float collisionSpot = CollisionDetector.collisionWithRectangleGameObject(ship,fprojectile,shapeRenderer);
-                if(collisionSpot != 2){
-                    hitProjectiles.add(fprojectile);
-                    ship.health -= fprojectile.damage;
-                }
+            if(projectile.toRemove()) {
+                it.remove();
+                projectile.dispose();
+                continue;
             }
 
-            fprojectile.updatePos(delta);
-
+            projectile.update(this, delta);
+            projectile.renderShapeRenderer(shapeRenderer);
         }
 
-        for(Iterator<WeaponProjectile> hit = hitProjectiles.iterator(); hit.hasNext(); ) {
-
-            WeaponProjectile hitproj = hit.next();
-            friendlyProjectiles.remove(hitproj);
-
+        if(!tempHostileProjectiles.isEmpty()){
+            hostileProjectiles.addAll(tempHostileProjectiles);
+            tempHostileProjectiles = new ArrayList<>();
         }
+
         shapeRenderer.end();
+    }
 
+    private void updateHostileProjectiles(float delta){
+        updateProjectiles(hostileProjectiles, delta);
+    }
+
+    private void updateFriendlyProjectiles(float delta) {
+        updateProjectiles(friendlyProjectiles, delta);
+    }
+
+    private void updateFriendlyExplosions(float delta) {
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.FIREBRICK);
+
+        for (Iterator<Explosion> it = friendlyExplosions.iterator(); it.hasNext(); ) {
+
+            Explosion exp = it.next();
+
+            if(exp.duration <= 0){
+                it.remove();
+                continue;
+            }
+
+            exp.update(this, delta);
+
+            shapeRenderer.circle(exp.pos.x, exp.pos.y, exp.size);
+        }
+
+        shapeRenderer.end();
+    }
+
+    private void updatePowerUps(float delta){
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.GOLDENROD);
+        shapeRenderer.identity();
+
+        for (Iterator<PowerUp> pit = powerUps.iterator(); pit.hasNext(); ) {
+            PowerUp pup = pit.next();
+
+            if(pup.toRemove()){
+                pit.remove();
+                continue;
+            }
+
+            pup.update(delta);
+        }
+
+        shapeRenderer.end();
     }
 
     private void updatePlayerShip(float delta){
 
-        playerShip.updateTimers(delta);
-        playerShip.getInput(delta);
-        playerShip.updatePos(delta);
-        playerShip.drag(delta);
-
-        if (playerShip.shootWeapon) {
-            playerShip.bulletCoolDown = 0.5f;
-            Vector2 up = homeBase.getPos().sub(playerShip.getPos()).nor().scl(-1);
-            friendlyProjectiles.addAll(playerShip.fire(up, delta));
-        }
+        playerShip.update(this, delta);
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.identity();
         shapeRenderer.translate(playerShip.pos.x, playerShip.pos.y, 0);
         shapeRenderer.setColor(1 - (playerShip.health / 50), 1.0f, playerShip.health / 50, 1);
         shapeRenderer.rotate(0, 0, 1, (playerShip.rotation));
-        shapeRenderer.rect(0, 0, playerShip.width, playerShip.height);
+        shapeRenderer.rect(-playerShip.width/2, 0, playerShip.width, playerShip.height);
         shapeRenderer.end();
     }
 
@@ -367,9 +384,16 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
      *  if planet has been hit check if any parts are loose
      */
     private void checkIntegrity() {
-        if(homeBase.checkIntegrity) {
+        if(homeBase.checkIntegrity && !homeBase.checkingIntegrity) {
             homeBase.checkIntegrity = false;
-            updateBoundingBox = true;
+
+
+            homeBase.checkIntegrityStage1();
+            homeBase.checkIntegrityStage2();
+            homeBase.checkIntegrityStage3();
+            
+
+            /**
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -377,14 +401,11 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
                     try {
                         if(!homeBase.checkingIntegrity) {
                             homeBase.checkIntegrityStage1();
-
                             homeBase.checkIntegrityStage2();
-
                             Gdx.app.postRunnable(new Runnable() {
                                 @Override
                                 public void run() {
                                     homeBase.checkIntegrityStage3();
-                                    updateBoundingBox = true;
                                 }
                             });
                         }
@@ -393,6 +414,7 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
                     }
                 }
             }).start();
+             **/
         }
     }
 
@@ -406,10 +428,14 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
             homeBase.vel.add(0,- 300 * delta);
     }
 
+    private void updateCore(HomeBase homeBase, float delta){
+
+        HomeBaseCore core = homeBase.core;
+    }
+
     private void updateHomeBase(float delta) {
 
-        if(!homeBase.centreIntact)
-            gameOver = true;
+        //updateCore(homeBase, delta);
 
         checkIntegrity();
         if(!playerShip.flyToPosition)
@@ -419,78 +445,37 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
         homeBase.rotate(delta);
         homeBase.updateChunks(delta);
 
-        if(updateBoundingBox){
-            updateBoundingBox = false;
+        if(homeBase.checkingFinished){
+            homeBase.checkingFinished = false;
             drawingBoard.updateTexture(homeBase.pixmap);
         }
 
         drawingBoard.drawHomeBase(homeBase.pos.x, homeBase.pos.y, homeBase.rotation);
         drawingBoard.drawChunks(homeBase.chunks);
         //TODO REMOVE CHUNKS WHEN OFF SCREEN!
+
+
     }
 
     private void updateFriendlyTurrets(float delta){
-
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-
+        shapeRenderer.identity();
         for(Iterator<Defender> it = friendlyTurrets.iterator(); it.hasNext(); ) {
-            Defender t = it.next();
-            if (t.health <= 0) {
+
+            Defender defender = it.next();
+            if(defender.toRemove()){
                 it.remove();
-                t.dispose();
+                defender.dispose();
                 continue;
             }
 
-            t.locateGround(homeBase, delta);
-            t.rotateByPlanet(homeBase.rotationDelta * delta, homeBase.pos);
+            if(homeBase.checkingFinished)
+                defender.onGround = false;
 
-            LaserTurret tl = (LaserTurret) t;
-            tl.updateTimer(delta);
-
-            //Vector pointing to the ship + offset
-            Vector2 toTarget = tl.aimAtTarget(delta);
-
-            //check if target is dead, lose target
-            //check if target not in sight or out of range, if true lose target
-            if(tl.hasTarget && (tl.targetDead() ||
-                    (!CollisionDetector.clearLineOfSight(t.pos,toTarget, homeBase,shapeRenderer) ||
-                            !CollisionDetector.collisionCircleSquare(t.pos.x, t.pos.y, tl.range, tl.getTargetPos().x, tl.getTargetPos().y, 1)))){
-                tl.loseTarget();
-            }
-
-            if(tl.hasTarget){
-
-                if(tl.isArmed()){
-                    t.fire(friendlyProjectiles);
-                    //Vector2 offset = t.getTarget().vel.cpy().scl(9);
-                }
-            }
-
-            if (!tl.hasTarget() ) {
-
-                //Acquire target
-                //TODO goes through this list intelligently... sort by nearest to turret, health left, ship strength etc etc
-                for (Ship ship : ships) {
-
-                    if(CollisionDetector.collisionCircleSquare(t.pos.x, t.pos.y,150, ship.pos.x, ship.pos.y, 1)){
-
-                        //aimAtBird: Vector pointing to the bird
-                        toTarget = ship.getPos();
-                        toTarget.add(ship.getVel().scl(15));
-
-                        // if there is a clear line of sight to the bird.. set target
-                        if(!ship.dead && CollisionDetector.clearLineOfSight(t.pos,toTarget, homeBase,shapeRenderer)){
-                            tl.setTarget(ship);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            //draw turret
-            shapeRenderer.setColor(0.66f, 0.709f, 0.6f, 1);
-            shapeRenderer.circle(t.pos.x, t.pos.y, t.size);
+            defender.update(this, delta);
+            defender.renderShapeRenderer(shapeRenderer);
         }
+
         shapeRenderer.end();
     }
 
@@ -505,19 +490,19 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
             }
 
             bo.pos.sub(homeBase.vel.cpy().scl(delta * bo.speed));
-            drawingBoard.addSpriteFromAtlas(bo.pos.x, bo.pos.y, 0,bo.scaleMul, bo.sprite);
+            drawingBoard.addSpriteFromAtlas(bo.pos.x, bo.pos.y, 0, bo.scaleMul, bo.sprite, drawingBoard.getSprites());
         }
 
-        nextStarDelay = random.nextInt(80) + 40;
+        nextStarDelay = RandomUtil.nextInt(80) + 40;
 
         if(homeBase.distance < nextStar){
 
             nextStar -= nextStarDelay;
             BackgroundObject star = new BackgroundObject(
-                    new Vector2((random.nextFloat()-0.5f) * 4 * h, -h),
+                    new Vector2((RandomUtil.nextFloat()-0.5f) * 4 * h, -h),
                     0.2f,
                     1,
-                    random.nextFloat()+0.5f,
+                    RandomUtil.nextFloat()+0.5f,
                     "star");
             backgroundObjects.add(star);
 
@@ -536,7 +521,7 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
             bo.pos.sub(homeBase.vel.cpy().scl(delta * bo.speed));
 
             //drawingBoard.addSpriteFromAtlas(bo.pos.x, bo.pos.y, bo.atlasKey);
-            drawingBoard.addSpriteFromAtlasToForeGround(bo.pos.x, bo.pos.y, 0, bo.scaleMul, bo.sprite);
+            drawingBoard.addSpriteFromAtlas(bo.pos.x, bo.pos.y, 0, bo.scaleMul, bo.sprite, drawingBoard.getFrontSprites());
 
         }
     }
@@ -551,7 +536,7 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
 
         if(pointer < 5){
             if(leftClickMode == leftClickModes.DROP_LAVA)
-                hostileProjectiles.add(new Lava(screenX, screenY, 50));
+                hostileProjectiles.add(new Lava(new Vector2(screenX, screenY), 100, 1));
         }
         return false;
     }
@@ -566,45 +551,109 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
 
         Vector3 vec = new Vector3(screenX,screenY,0);
         camera.unproject(vec);
-        screenX = (int) vec.x;
-        screenY = (int) vec.y;
+        float x = vec.x;
+        float y = vec.y;
 
-        if(button == Input.Buttons.LEFT ){
+        if(debugMode && button == Input.Buttons.LEFT ){
             switch (leftClickMode) {
                 case DROP_BOMB:{
-                    hostileProjectiles.add(new Bomb(screenX, screenY, 3, 10));
+                    hostileProjectiles.add(new Bomb(new Vector2(x, y), 3, 25, 1));
+                    break;
+                }
+                case SHOOT_BULLET: {
+                    Vector2 pos = new Vector2(x,y);
+                    Vector2 aim = pos.cpy().nor().scl(-1);
+                    Bullet bullet = new BulletHostile(pos.cpy(), aim.rotateDeg(RandomUtil.nextInt(10)-10), 300,4,2);
+                    hostileProjectiles.add(bullet);
+                    break;
+                }
+                case DROP_LAVA_BALL: {
+                    LavaBomb lb = new LavaBomb(new Vector2(x,y));
+                    hostileProjectiles.add(lb);
+                    break;
+                }
+                case DROP_HEALTH_BALL: {
+                    HealthBomb hb = new HealthBomb(new Vector2(x,y));
+                    friendlyProjectiles.add(hb);
                     break;
                 }
                 case SPAWN_BASIC_UNIT:{
-                    Ship s = new Ship_TestShip(screenX, screenY, 5);
+                    Ship s = new Ship_TestShip(new Vector2(x,y),  homeBase.enemyOrbitRange);
                     ships.add(s);
                     break;
                 }
                 case SPAWN_LARGE_UNIT:{
-                    Squad_Formation1 sq = new Squad_Formation1((new Vector2(screenX, screenY)));
-                    Ship s = new Ship_TestLargeShip(screenX, screenY);
+                    Squad_Formation1 sq = new Squad_Formation1(new Vector2(x, y), homeBase.enemyOrbitRange);
+                    Ship s = new Ship_TestLargeShip(new Vector2(x, y));
                     s.joinSquad(sq);
                     ships.add(s);
                     enemySquads.add(sq);
+
+                    int orbs = 7;
+                    int ang  = 0;
+                    for(int i = 0;i<orbs;i++){
+                        Ship so = new Orbiter(new Vector2(x,y), s,8, ang,50);
+                        ang += 360/orbs;
+                        ships.add(so);
+                    }
+                    break;
+                }
+                case SPAWN_DART_UNIT:{
+                    Ship s = new Dart(new Vector2(x, y), homeBase.enemyOrbitRange, RandomUtil.nextOne());
+                    ships.add(s);
+                    break;
+                }
+                case SPAWN_LASER_UNIT:{
+                    Ship s = new LaserCannonShip(new Vector2(x,y), 20, homeBase.enemyOrbitRange);
+                    ships.add(s);
+
+                    int orbs = 12;
+                    int ang  = 0;
+                    for(int i = 0;i<orbs;i++){
+                        Ship so = new Orbiter(new Vector2(x,y), s, 8, ang,50);
+                        ang += 360/orbs;
+                        ships.add(so);
+                    }
+
+                    break;
+                }
+                case SPAWN_UPGRADER:{
+                    Ship s = new WeaponUpgradeShip(new Vector2(x,y), this);
+                    ships.add(s);
                     break;
                 }
                 case SPAWN_SQUAD:{
-                    Squad_Formation1 sq = new Squad_Formation1(new Vector2(screenX, screenY));
-                    Ship_TestLargeShip lb = new Ship_TestLargeShip(screenX, screenY);
+                    Squad_Formation1 sq = new Squad_Formation1(new Vector2(x, y), homeBase.enemyOrbitRange);
+                    Ship_TestLargeShip lb = new Ship_TestLargeShip(new Vector2(x, y));
                     lb.joinSquad(sq);
                     ships.add(lb);
 
                     for(int i = 0;i<8;i++){
-                        Ship_TestShip ts1 = new Ship_TestShip(screenX, screenY, 1);
+                        Ship_TestShip ts1 = new Ship_TestShip(new Vector2(x, y), homeBase.enemyOrbitRange);
                         ts1.joinSquad(sq);
                         ships.add(ts1);
                     }
                     enemySquads.add(sq);
                     break;
                 }
+                case SPAWN_FLOCK:{
+                    int dir = RandomUtil.nextOne();
+                    for(int i = 0;i<10;i++){
+                        Vector2 dPos = new Vector2(x + RandomUtil.nextFloat2() * 50,y + RandomUtil.nextFloat2() * 50);
+                        Dart dart = new Dart(dPos, homeBase.enemyOrbitRange, dir, i * 10);
+                        ships.add(dart);
+                    }
+                    break;
+                }
                 case ADD_TURRET:{
-                    LaserTurret lt = new LaserTurret(new Vector2(screenX, screenY));
+                    LaserTurret lt = new LaserTurret(new Vector2(x, y));
                     friendlyTurrets.add(lt);
+                    break;
+                }
+                case REMOVE_CIRCLE:{
+                    homeBase.removePointsLava(x, y, (int) 6,100);
+                    homeBase.setCheckIntegrity();
+                    break;
                 }
             }
         }
@@ -614,60 +663,97 @@ public class BasicLevel extends GameLevelObject implements Screen, InputProcesso
 
     @Override
     public boolean keyDown(int keycode) {
+
+        if (keycode == Input.Keys.Q ){
+            homeBase.rotationDelta -= 0.1f;
+        }
+        if (keycode == Input.Keys.E ){
+            homeBase.rotationDelta += 0.1f;
+        }
         if (keycode == Input.Keys.P ){
             slow = !slow;
         }
         if ( keycode == Input.Keys.Z ){
             camera.zoom += 0.05;
-            camera.update();
-            drawingBoard.updateCamera(camera);
-            shapeRenderer.setProjectionMatrix(camera.combined);
-            batch.setProjectionMatrix(camera.combined);
+            updateCamera();
         }
         if ( keycode == Input.Keys.X ){
             camera.zoom -= 0.05;
-            camera.update();
-            drawingBoard.updateCamera(camera);
-            shapeRenderer.setProjectionMatrix(camera.combined);
-            batch.setProjectionMatrix(camera.combined);
+            updateCamera();
         }
 
-        if( keycode == Input.Keys.NUM_1)
-            leftClickMode = leftClickModes.DROP_BOMB;
+        if(keycode == Input.Keys.NUM_1) {
+            switch (leftClickMode) {
+                case DROP_BOMB:leftClickMode=leftClickModes.SHOOT_BULLET;break;
+                case SHOOT_BULLET:leftClickMode=leftClickModes.DROP_LAVA;break;
+                case DROP_LAVA:leftClickMode=leftClickModes.DROP_LAVA_BALL;break;
+                case DROP_LAVA_BALL:leftClickMode=leftClickModes.DROP_HEALTH_BALL;break;
+                default:leftClickMode=leftClickModes.DROP_BOMB;break;
+            }
+        }
 
-        if (keycode == Input.Keys.NUM_2)
-            leftClickMode = leftClickModes.DROP_LAVA;
+        if(keycode == Input.Keys.NUM_2) {
+            switch (leftClickMode) {
+                case SPAWN_SQUAD:leftClickMode=leftClickModes.SPAWN_FLOCK;break;
+                default:leftClickMode=leftClickModes.SPAWN_SQUAD;
+            }
+        }
 
-        if(keycode == Input.Keys.NUM_3)
-            leftClickMode = leftClickModes.SPAWN_SQUAD;
+        if(keycode == Input.Keys.NUM_3) {
+            switch (leftClickMode) {
+                case SPAWN_BASIC_UNIT:leftClickMode=leftClickModes.SPAWN_LARGE_UNIT;break;
+                case SPAWN_LARGE_UNIT:leftClickMode=leftClickModes.SPAWN_DART_UNIT;break;
+                case SPAWN_DART_UNIT:leftClickMode=leftClickModes.SPAWN_LASER_UNIT;break;
+                default:leftClickMode=leftClickModes.SPAWN_BASIC_UNIT;
+            }
+        }
 
         if(keycode == Input.Keys.NUM_4)
-            leftClickMode = leftClickModes.SPAWN_BASIC_UNIT;
-
-        if(keycode == Input.Keys.NUM_5)
-            leftClickMode = leftClickModes.SPAWN_LARGE_UNIT;
-
-        if(keycode == Input.Keys.NUM_5)
             leftClickMode = leftClickModes.ADD_TURRET;
+
+        if(keycode == Input.Keys.NUM_5){
+            switch (playerShip.currentWeapon.weaponType) {
+                case FLAK:playerShip.currentWeapon = new ChainGun();break;
+                case CHAIN_GUN:playerShip.currentWeapon = new CityDefender();break;
+                case BOMB:playerShip.currentWeapon = new LaserBeamGun(playerShip.pos, 1f); break;
+                default:playerShip.currentWeapon = new ShotGun(); break;
+            }
+        }
+
+        if(keycode == Input.Keys.NUM_8)
+            leftClickMode = leftClickModes.SPAWN_UPGRADER;
+
+        if(keycode == Input.Keys.NUM_9)
+            leftClickMode = leftClickModes.REMOVE_CIRCLE;
+
+        if(keycode == Input.Keys.R) {
+            homeBase.initializeHomeBasePixMap();
+            homeBase.setCheckIntegrity();
+        }
 
         return true;
     }
 
     /**
      *  set camera to game view
-     *  move to subclass
      */
+    @Override
     public void initializeCamera() {
 
+        homeBaseCameraPos = new Vector3(-w/2,-h*0.4f, 0);
+        homeBaseProject   = new Vector3(0,0,0);
         camera = new OrthographicCamera();
         camera.setToOrtho(false, w, h);
         camera.update();
         hudRenderer   = new ShapeRenderer();
         hudRenderer.setProjectionMatrix(camera.combined);
-        camera.translate(0,0);
-        camera.translate(-w/2,-h*0.3f);
-        camera.zoom -= 0.3f;
+        camera.translate(homeBaseCameraPos);
+
+        camera.zoom -= 0.5f;
         camera.update();
+
+        camera.project(homeBaseProject);
+        homeBaseProject.y = h - homeBaseProject.y;
     }
 
 }

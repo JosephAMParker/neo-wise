@@ -1,12 +1,15 @@
 package com.neowise.game.gameObject.ship;
 
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.neowise.game.main.BasicLevel;
+import com.neowise.game.squad.Squad;
 import com.neowise.game.util.OrbitalAngle;
 
 /**
  * Created by tabletop on 6/9/16.
  */
-public class Ship_WeaponUpgrader extends Ship{
+public class Ship_WeaponUpgrader extends ShipCircle{
 
     boolean down;
     float downTimer;
@@ -36,6 +39,16 @@ public class Ship_WeaponUpgrader extends Ship{
 //        animation = new MyAnimation("Ship_WeaponUpgrader",1,pos,rotation,true,5,width);
     }
 
+    @Override
+    public void update(BasicLevel basicLevel, float delta) {
+
+    }
+
+    @Override
+    public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
+
+    }
+
     public void updateVel(Vector2 HBPos,Vector2 vel){
 
         /*
@@ -52,7 +65,6 @@ public class Ship_WeaponUpgrader extends Ship{
 
     }
 
-    @Override
     public void updatePos(Vector2 HBPos){
 
         if (down){
@@ -80,7 +92,6 @@ public class Ship_WeaponUpgrader extends Ship{
 
     }
 
-    @Override
     public void updateTimers(float delta){
 
         downTimer -= delta;

@@ -8,11 +8,10 @@ import com.neowise.game.main.NeoWiseGame;
 public class HtmlLauncher extends GwtApplication {
 
         @Override
-        public GwtApplicationConfiguration getConfig () {
-                // Resizable application, uses available space in browser
-                return new GwtApplicationConfiguration(true);
+        public GwtApplicationConfiguration getConfig () { 
                 // Fixed size application:
-                //return new GwtApplicationConfiguration(480, 320);
+                return new GwtApplicationConfiguration(500, 700);
+                //return new GwtApplicationConfiguration();
         }
 
         @Override

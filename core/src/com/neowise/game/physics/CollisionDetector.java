@@ -2,16 +2,14 @@ package com.neowise.game.physics;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.neowise.game.gameObject.weaponProjectile.Laser;
-import com.neowise.game.gameObject.weaponProjectile.PlayerOrbiterBomb;
 import com.neowise.game.gameObject.RectangleGameObject;
-import com.neowise.game.gameObject.ship.Ship;
 import com.neowise.game.gameObject.weaponProjectile.Bullet;
 import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
 import com.neowise.game.homeBase.HomeBase;
@@ -53,12 +51,16 @@ public class CollisionDetector {
 
 	}
 
-	public static boolean collition(float x, float y, HomeBase homeBase) {
+	public static boolean collision(float x, float y, HomeBase homeBase) {
 
 		return collisionCirclePixMap(x, y, homeBase.pixmap, homeBase.pos, homeBase.rotation);
 	}
 
 	public static boolean collision(Vector2 pos, Vector2 homeBasePos, double rotation, Pixmap pixmap) {
+		return collision(pos, homeBasePos, rotation, 0, pixmap);
+	}
+
+	public static boolean collision(Vector2 pos, Vector2 homeBasePos, double rotation, float min, Pixmap pixmap) {
 
 		int x = (int) (pos.x - homeBasePos.x);
 		int y = (int) (pos.y - homeBasePos.y);
@@ -72,8 +74,9 @@ public class CollisionDetector {
 		y_ = pixmap.getHeight() - y_ - pixmap.getHeight() / 2;
 
 		Color pixel = new Color(pixmap.getPixel((int) x_, (int) y_));
-		if (pixel.a > 0)
+		if (pixel.a > min)
 			return true;
+
 		return false;
 	}
 
@@ -89,7 +92,7 @@ public class CollisionDetector {
 		float y_ = (float) (x * Math.sin(rot) + y * Math.cos(rot));
 
 		x_ += pixmap.getWidth() / 2;
-		y_ = pixmap.getHeight() - y_ - pixmap.getHeight() / 2;
+		y_ = pixmap.getHeight() / 2 - y_;
 
 
 		Color pixel = new Color(pixmap.getPixel((int) x_, (int) y_));
@@ -100,22 +103,76 @@ public class CollisionDetector {
 		return false;
 	}
 
-	public static boolean collisionCirclePoint(float x, float y, float r, float px, float py) {
+	public static Vector2 collisionLinePixMap(Vector2 pos1, Vector2 pos2, HomeBase homeBase){
 
+		Vector2 _pos1 = pos1.cpy();
+		Vector2 _pos2 = pos2.cpy();
+
+		float radians = (float) (2 * Math.PI - homeBase.rotation);
+
+		_pos1.rotateRad(radians);
+		_pos1.x += homeBase.pixmap.getWidth() / 2;
+		_pos1.y =  homeBase.pixmap.getHeight() / 2 - _pos1.y;
+
+		_pos2.rotateRad(radians);
+		_pos2.x += homeBase.pixmap.getWidth() / 2;
+		_pos2.y =  homeBase.pixmap.getHeight() / 2 - _pos2.y;
+
+		_pos2.sub(_pos1);
+
+		int steps = 3;
+		float step = _pos2.len() / steps;
+
+		_pos2.nor().scl(step);
+		Color pixel;
+
+		for (int i = 0; i<steps;i++){
+			pixel = new Color(homeBase.pixmap.getPixel((int) _pos1.x, (int) _pos1.y));
+
+			if (pixel.a > 0) {
+				_pos1.x -= homeBase.pixmap.getWidth() / 2;
+				_pos1.y  = homeBase.pixmap.getHeight()/2 - _pos1.y;
+				_pos1.rotateRad(-radians);
+				return _pos1;
+			}
+			_pos1.add(_pos2);
+		}
+
+		return null;
+	}
+
+	public static boolean collisionWithCore(HomeBase homeBase, Vector2 pos){
+		return pos.len() < homeBase.core.radius;
+	}
+
+	public static boolean collisionCirclePoint(float x, float y, float r, float px, float py) {
 		if ((x - px) * (x - px) + (y - py) * (y - py) < r * r)
 			return true;
 		return false;
 	}
 
-	public static boolean collisionLineRect(float x1, float y1, float x2, float y2, float recX, float recY, float recWidth, float recHeight, double rotation, ShapeRenderer shapeRenderer) {
+	public static boolean collisionLineLine(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4){
 
-		float minX = recX;
-		float maxX = recX + recWidth;
-		float minY = recY;
-		float maxY = recY + recHeight;
+		// calculate the distance to intersection point
+		float dem = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+		float uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / dem;
+		float uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / dem;
 
-		double rot = Math.PI * 2 - rotation;
+		// if uA and uB are between 0-1, lines are colliding
+		if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1)
+			return true;
 
+		return false;
+	}
+
+	public static boolean collisionLineRect(float x1, float y1, float x2, float y2, float recX, float recY, float recWidth, float recHeight, double rotation) {
+
+		float minX = recX - recWidth/2;
+		float maxX = recX + recWidth/2;
+		float minY = recY - recHeight/2;
+		float maxY = recY + recHeight/2;
+
+		double rot = Math.PI * 2 - rotation * MathUtils.degreesToRadians;
 
 		x1 -= recX;
 		x2 -= recX;
@@ -123,11 +180,14 @@ public class CollisionDetector {
 		y1 -= recY;
 		y2 -= recY;
 
-		float x1_ = (float) (x1 * Math.cos(rot) - y1 * Math.sin(rot));
-		float y1_ = (float) (x1 * Math.sin(rot) + y1 * Math.cos(rot));
+		float cos = (float) Math.cos(rot);
+		float sin = (float) Math.sin(rot);
 
-		float x2_ = (float) (x2 * Math.cos(rot) - y2 * Math.sin(rot));
-		float y2_ = (float) (x2 * Math.sin(rot) + y2 * Math.cos(rot));
+		float x1_ = (float) (x1 * cos - y1 * sin);
+		float y1_ = (float) (x1 * sin + y1 * cos);
+
+		float x2_ = (float) (x2 * cos - y2 * sin);
+		float y2_ = (float) (x2 * sin + y2 * cos);
 
 		x1 = x1_;
 		x2 = x2_;
@@ -139,14 +199,6 @@ public class CollisionDetector {
 
 		y1 += recY;
 		y2 += recY;
-
-
-		x1 += recWidth/2;
-		x2 += recWidth/2;
-
-		y1 +=recHeight/2;
-		y2 +=recHeight/2;
-
 
 		// Completely outside.
 		if ((x1 <= minX && x2 <= minX) || (y1 <= minY && y2 <= minY) || (x1 >= maxX && x2 >= maxX) || (y1 >= maxY && y2 >= maxY))
@@ -195,64 +247,7 @@ public class CollisionDetector {
 
 	}
 
-	public static boolean collisionLineRect(float x1, float y1, float x2, float y2, float recX, float recY, float recWidth, float recHeight, double rotation) {
-
-		//float minX = recX;
-		//float maxX = recX + recWidth;
-		///float minY = recY;
-		//float maxY = recY + recHeight;
-
-		recX -= recWidth / 2;
-		recY -= recHeight / 2;
-
-		float minX = 0;
-		float maxX = 0 + recWidth;
-		float minY = 0;
-		float maxY = 0 + recHeight;
-
-		double rot = Math.PI * 2 - rotation;
-
-
-		x1 -= recX;
-		x2 -= recX;
-
-		y1 -= recY;
-		y2 -= recY;
-
-		float x1_ = (float) (x1 * Math.cos(rot) - y1 * Math.sin(rot));
-		float y1_ = (float) (x1 * Math.sin(rot) + y1 * Math.cos(rot));
-
-		float x2_ = (float) (x2 * Math.cos(rot) - y2 * Math.sin(rot));
-		float y2_ = (float) (x2 * Math.sin(rot) + y2 * Math.cos(rot));
-
-		x1 = x1_;
-		x2 = x2_;
-		y1 = y1_;
-		y2 = y2_;
-
-		// Completely outside.
-		if ((x1 <= minX && x2 <= minX) || (y1 <= minY && y2 <= minY) || (x1 >= maxX && x2 >= maxX) || (y1 >= maxY && y2 >= maxY))
-			return false;
-
-		float m = (y2 - y1) / (x2 - x1);
-
-		float y = m * (minX - x1) + y1;
-		if (y > minY && y < maxY) return true;
-
-		y = m * (maxX - x1) + y1;
-		if (y > minY && y < maxY) return true;
-
-		float x = (minY - y1) / m + x1;
-		if (x > minX && x < maxX) return true;
-
-		x = (maxY - y1) / m + x1;
-		if (x > minX && x < maxX) return true;
-
-		return false;
-
-	}
-
-	public static boolean clearLineOfSight(Vector2 pos, Vector2 pos2, HomeBase homeBase, ShapeRenderer sh) {
+	public static boolean clearLineOfSight(Vector2 pos, Vector2 pos2, HomeBase homeBase) {
 
 		// change to one call of collisoinLineQuad(...)
 		//return !collisionLineQuad(pos.x,pos.y,pos2.x,pos2.y,homeBase.quad,homeBase.pos,homeBase.rotation);
@@ -267,7 +262,7 @@ public class CollisionDetector {
 
 			if (i % 10 == 0) {
 
-				if (collition(dpos.x, dpos.y, homeBase))
+				if (collision(dpos.x, dpos.y, homeBase))
 					return false;
 
 			}
@@ -316,7 +311,7 @@ public class CollisionDetector {
 	 * @return the x position of where the collision occured as a ratio. 1 = right end, 0 = middle (or anywhere if x pos doesnt matter), -1 = left end.
 	 * 2 means no collision
 	 */
-	public static float collisionWithRectangleGameObject(com.neowise.game.gameObject.RectangleGameObject ship, com.neowise.game.gameObject.weaponProjectile.WeaponProjectile proj) {
+	public static float collisionWithRectangleGameObject2(com.neowise.game.gameObject.RectangleGameObject ship, com.neowise.game.gameObject.weaponProjectile.WeaponProjectile proj) {
 
 		if (proj instanceof Laser) {
 			if (collisionLineRect(proj.pos.x, proj.pos.y, proj.getPos().add(proj.vel).x, proj.getPos().add(proj.vel).y, ship.pos.x, ship.pos.y, ship.width, ship.height, ship.rotation)) {
@@ -332,7 +327,7 @@ public class CollisionDetector {
 			//	return true;
 			//}
 
-			return collisionPointRect(proj.pos.x, proj.pos.y, ship.pos.x, ship.pos.y, ship.width, ship.height, ship.rotation);
+			//return collisionPointRect(proj.pos.x, proj.pos.y, ship.pos.x, ship.pos.y, ship.width, ship.height, ship.rotation);
 		}
 
 		return 2;
@@ -340,150 +335,20 @@ public class CollisionDetector {
 
 	}
 
-	public static float collisionWithRectangleGameObject(RectangleGameObject ship, WeaponProjectile proj, ShapeRenderer shapeRenderer) {
+	public static float collisionWithRectangleGameObject(RectangleGameObject ship, WeaponProjectile proj) {
 
 		if (proj instanceof Laser) {
 			Vector2 endLaser = proj.getPos().add(proj.getVel().nor().scl(((Laser) proj).length));
-			if (collisionLineRect(proj.pos.x, proj.pos.y, endLaser.x, endLaser.y, ship.pos.x, ship.pos.y, ship.width, ship.height, ship.rotation, shapeRenderer)) {
+			if (collisionLineRect(proj.pos.x, proj.pos.y, endLaser.x, endLaser.y, ship.pos.x, ship.pos.y, ship.width, ship.height, ship.rotation)) {
 				return 0;
 			}
 		}
 
 		if (proj instanceof Bullet) {
-			return collisionPointRect(proj.pos.x, proj.pos.y, ship.pos.x, ship.pos.y, ship.width, ship.height, ship.rotation);
+			//return collisionPointRect(proj.pos.x, proj.pos.y, ship.pos.x, ship.pos.y, ship.width, ship.height, ship.rotation);
 		}
 
 		return 2;
-
-
-	}
-
-	/**
-	 * Weaponprojectiles are placed in gridFriendly, in their place depending on weaponprojectile(x,y). Parameter bird then checks collision detection with all weaponProjectiles in that grid position.
-	 *
-	 * @param bird instead of ship for some reason
-	 * @return
-	 */
-	public Collection<WeaponProjectile> collisionWithGrid(Ship bird) {
-
-		int x, y, x_, y_;
-		Collection<com.neowise.game.gameObject.weaponProjectile.WeaponProjectile> hitProjectiles = new ArrayList<com.neowise.game.gameObject.weaponProjectile.WeaponProjectile>();
-
-		x = (int) Math.floor(bird.pos.x / gridWidth);
-		y = (int) Math.floor(bird.pos.y / gridHeight);
-
-		//should rotate ... 
-		x_ = (int) Math.floor((bird.pos.x + bird.width) / gridWidth);
-		y_ = (int) Math.floor((bird.pos.y + bird.height) / gridHeight);
-
-		try {
-			for (Iterator<com.neowise.game.gameObject.weaponProjectile.WeaponProjectile> it = gridFriendley[(gridDiv * y + x)].entities.iterator(); it.hasNext(); ) {
-				//for (Laser laser : grid[(gridDiv*y+x)].entities){
-				com.neowise.game.gameObject.weaponProjectile.WeaponProjectile proj = it.next();
-
-				if (proj instanceof Laser) {
-					Vector2 endLaser = proj.getPos().add(proj.getVel().nor().scl(((Laser) proj).length));
-					if (collisionLineRect(proj.pos.x, proj.pos.y, endLaser.x, endLaser.y, bird.pos.x, bird.pos.y, bird.width, bird.height, bird.rotation)) {
-						hitProjectiles.add(proj);
-						it.remove();
-						//return true;
-					}
-				}
-
-				if (proj instanceof PlayerOrbiterBomb || proj instanceof com.neowise.game.gameObject.weaponProjectile.Bullet) {
-
-					if (collisionCircleRectangle(proj.pos.x, proj.pos.y, proj.size, bird.pos.x, bird.pos.y, bird.width, bird.height, bird.rotation)) {
-						hitProjectiles.add(proj);
-						it.remove();
-					}
-				}
-
-			}
-
-			if (x_ > x) {
-
-				for (Iterator<com.neowise.game.gameObject.weaponProjectile.WeaponProjectile> it = gridFriendley[(gridDiv * y + x_)].entities.iterator(); it.hasNext(); ) {
-					//for (Laser laser : grid[(gridDiv*y+x_)].entities){
-
-					com.neowise.game.gameObject.weaponProjectile.WeaponProjectile proj = it.next();
-
-					if (proj instanceof Laser) {
-						if (collisionLineRect(proj.pos.x, proj.pos.y, proj.getPos().add(proj.vel).x, proj.getPos().add(proj.vel).y, bird.pos.x, bird.pos.y, bird.width, bird.height, bird.rotation)) {
-							hitProjectiles.add(proj);
-							it.remove();
-							//return true;
-						}
-					}
-
-					if (proj instanceof PlayerOrbiterBomb || proj instanceof com.neowise.game.gameObject.weaponProjectile.Bullet) {
-
-						if (collisionCircleRectangle(proj.pos.x, proj.pos.y, proj.size, bird.pos.x, bird.pos.y, bird.width, bird.height, bird.rotation)) {
-							hitProjectiles.add(proj);
-							it.remove();
-						}
-					}
-
-				}
-			}
-
-			if (y_ > y) {
-
-				for (Iterator<com.neowise.game.gameObject.weaponProjectile.WeaponProjectile> it = gridFriendley[(gridDiv * y_ + x)].entities.iterator(); it.hasNext(); ) {
-					//for (Laser laser : grid[(gridDiv*y_+x)].entities){
-
-					com.neowise.game.gameObject.weaponProjectile.WeaponProjectile proj = it.next();
-
-					if (proj instanceof Laser) {
-						if (collisionLineRect(proj.pos.x, proj.pos.y, proj.getPos().add(proj.vel).x, proj.getPos().add(proj.vel).y, bird.pos.x, bird.pos.y, bird.width, bird.height, bird.rotation)) {
-							hitProjectiles.add(proj);
-							it.remove();
-							//return true;
-						}
-					}
-
-					if (proj instanceof PlayerOrbiterBomb || proj instanceof com.neowise.game.gameObject.weaponProjectile.Bullet) {
-
-						if (collisionCircleRectangle(proj.pos.x, proj.pos.y, proj.size, bird.pos.x, bird.pos.y, bird.width, bird.height, bird.rotation)) {
-							hitProjectiles.add(proj);
-							it.remove();
-						}
-					}
-
-				}
-			}
-
-			if (x_ > x && y_ > y) {
-
-				for (Iterator<com.neowise.game.gameObject.weaponProjectile.WeaponProjectile> it = gridFriendley[(gridDiv * y_ + x_)].entities.iterator(); it.hasNext(); ) {
-					//for (proj laser : grid[(gridDiv*y_+x_)].entities){
-
-					WeaponProjectile proj = it.next();
-
-					if (proj instanceof Laser) {
-						if (collisionLineRect(proj.pos.x, proj.pos.y, proj.getPos().add(proj.vel).x, proj.getPos().add(proj.vel).y, bird.pos.x, bird.pos.y, bird.width, bird.height, bird.rotation)) {
-							hitProjectiles.add(proj);
-							it.remove();
-							//return true;
-						}
-					}
-
-					if (proj instanceof PlayerOrbiterBomb || proj instanceof Bullet) {
-
-						if (collisionCircleRectangle(proj.pos.x, proj.pos.y, proj.size, bird.pos.x, bird.pos.y, bird.width, bird.height, bird.rotation)) {
-							hitProjectiles.add(proj);
-							it.remove();
-						}
-					}
-
-				}
-			}
-
-
-		} catch (ArrayIndexOutOfBoundsException e) {
-		}
-
-
-		return hitProjectiles;
 	}
 
 	public static boolean collisionCircleCircle(float x, float y, float size,
@@ -493,6 +358,14 @@ public class CollisionDetector {
 		Vector2 circ2 = new Vector2(x2, y2);
 
 		if (circ1.dst(circ2) <= size + size2)
+			return true;
+		return false;
+	}
+
+	public static boolean collisionCircleCircle(Vector2 circle1, float size,
+												Vector2 circle2, float size2) {
+
+		if (circle1.dst(circle2) <= size + size2)
 			return true;
 		return false;
 	}
@@ -531,18 +404,20 @@ public class CollisionDetector {
 	}
 
 
-	public static float collisionPointRect(float px, float py, float rx, float ry, float width, float height, float rotation) {
+	public static boolean collisionPointRect(float px, float py, float rx, float ry, float width, float height, float rotation) {
 
 		px -= rx;
 		py -= ry;
 
 		double rot = (Math.PI * 2 - rotation);
-		float px_ = (float) (px * Math.cos(rot) - py * Math.sin(rot));
-		float py_ = (float) (px * Math.sin(rot) + py * Math.cos(rot));
+		double cos = Math.cos(rot);
+		double sin = Math.sin(rot);
+		float px_ = (float) (px * cos - py * sin);
+		float py_ = (float) (px * sin + py * cos);
 
 		if (px_ < -width / 2 || px_ > width / 2 || py_ < -height / 2 || py_ > height / 2)
-				return 2;
+			return false;
 
-		return px_ / width * 2;
+		return true;
 	}
 }

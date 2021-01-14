@@ -5,12 +5,9 @@ package com.neowise.game.util;
  */
 public class Constants {
 
-    public static final float TIME_STEP = 1/70f;
-    public static final int VELOCITY_ITERATIONS = 2;
-    public static final int POSITION_ITERATIONS = 6;
-    public static final float PPM = 20;
-
-    public enum GameObjectTypes {ship_box2d, bullet_box2d, weapon_upgrader}
-    public enum SquadTypes {flock}
+    public enum GAME_STATES {LOADING, IN_GAME, PLAYER_WIN, PLAYER_LOSS}
+    public enum GAME_MODE {CITY_DEFENDER, SPACE_INVADERS}
+    public enum SHIP_TYPES {UPGRADE_SHIP, BASIC_SPACE_INVADER, LARGE_SPACE_INVADER}
+    public enum WEAPON_TYPES {FLAK, CHAIN_GUN, LASER_BEAM, BOMB}
 
 }
