@@ -3,29 +3,30 @@ package com.neowise.game.menu;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.neowise.game.LevelInfo.CityDefenderLevelInfo;
+import com.neowise.game.LevelInfo.LevelInfo;
 import com.neowise.game.LevelInfo.SpaceInvadersLevelInfo;
+import com.neowise.game.draw.DrawingBoard;
 import com.neowise.game.main.BasicLevel;
 import com.neowise.game.main.GameLevelObject;
-import com.neowise.game.LevelInfo.LevelInfo;
 import com.neowise.game.main.NeoWiseGame;
 import com.neowise.game.physics.CollisionDetector;
 import com.neowise.game.util.Constants;
 import com.neowise.game.util.RandomUtil;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Random;
 
-public class StarMap extends GameLevelObject implements Screen, InputProcessor {
+public class StarMap extends GameLevelObject implements InputProcessor {
 
-    public boolean reset = false;
+    public boolean reset = false, hasCamPos = false;
 
     private StarMapNode[][] starMap;
     private StarMapNode[] playerPath;
@@ -35,47 +36,66 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
     private int maxReach;
     private StarMapNode currentNode;
     private float nodeHeight;
-    private float planetRadius;
+    public float planetRadius, dashWidth;
     private boolean introCameraPan;
-    private float cameraPanSpeed;
+    public float cameraPanSpeed, camYPos;
+    private boolean started;
+    private Sprite earth;
+    public float earthPos;
 
     public Color bgColor = new Color(0.01f,0.01f,0.02f,1);
-
 
     public StarMap(final NeoWiseGame game) {
 
         super(game);
 
-        numberOfLevels = 12;
-        mapWidth = 12;
+        numberOfLevels = 9;
+        mapWidth = 7;
         currentLevel = 0;
         maxReach = 2;
         currentNode = null;
         playerPath = new StarMapNode[numberOfLevels];
-        nodeHeight = h/6;
-        planetRadius = 500;
+        planetRadius = w;
         introCameraPan = true;
         cameraPanSpeed = 0;
+        dashWidth= 24;
 
-        initMap();
-
+        earth = DrawingBoard.createSprite("earth");
     }
 
     @Override
     public void initializeCamera() {
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, w, h);
-        camera.update();
-        hudRenderer   = new ShapeRenderer();
-        hudRenderer.setProjectionMatrix(camera.combined);
-        camera.translate(0, h + 150);
+        super.initializeCamera();
+        if(hasCamPos)
+            camera.position.y = camYPos;
+        else
+            camera.position.y = numberOfLevels * nodeHeight + h + planetRadius / 2;
+    }
+
+    @Override
+    public void show() {
+        super.show();
+        initializeCamera();
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+        resetCamera();
+        initializeCamera();
+    }
+
+    @Override
+    public void updateCamera() {
+        super.updateCamera();
+        hasCamPos = true;
+        camYPos = camera.position.y;
     }
 
     private void goToSelectedLevel(StarMapNode node){
         BasicLevel level = new BasicLevel(game);
         node.levelInfo.setBasicLevel(level);
         game.setScreen(level);
-        level.setInput();
     }
 
     private void makeChildrenPlayable(StarMapNode node){
@@ -93,6 +113,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
     private void drawMap(){
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.identity();
+
         //draw circles
         for(int r = 0; r<starMap.length;r++) {
             StarMapNode[] row = starMap[r];
@@ -112,6 +133,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
             }
         }
 
+        //draw connecting lines
         for(int r = 0; r<starMap.length;r++) {
             StarMapNode[] row = starMap[r];
             for (int c = 0; c < row.length; c++) {
@@ -119,28 +141,72 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
                 if (sNode != null) {
                     for(int sc=0;sc<sNode.children.size();sc++){
                         StarMapNode chNode = sNode.children.get(sc);
-                        shapeRenderer.setColor(Color.GRAY);
+
                         if(sNode.finished && chNode.playable)
-                            shapeRenderer.setColor(Color.CYAN);
-                        if(sNode.finished && chNode.finished)
-                            shapeRenderer.setColor(Color.FOREST);
-                        shapeRenderer.line(sNode.xPos, sNode.yPos, chNode.xPos, chNode.yPos);
+                            drawDashes(sNode, chNode, "playableDash");
+                        else if(sNode.finished && chNode.finished)
+                            drawLine(sNode, chNode, "finishedDash");
+                        else
+                            drawDashes(sNode, chNode, "lockedDash");
                     }
                 }
             }
         }
 
-        shapeRenderer.setColor(Color.BLUE);
-        shapeRenderer.circle(w/2, numberOfLevels * nodeHeight + planetRadius - 100, planetRadius);
+        earth.setBounds(-planetRadius/2 , earthPos , planetRadius * 2, planetRadius * 2);
+        DrawingBoard.addSprite(earth, DrawingBoard.getSprites());
+        drawingBoard.draw();
 
         shapeRenderer.end();
+    }
+
+    private void drawLine(StarMapNode sNode, StarMapNode chNode, String dashName) {
+
+        float distance = chNode.pos.dst(sNode.pos) - sNode.circleRadius - chNode.circleRadius;
+        Vector2 toNode = chNode.pos.cpy().sub(sNode.pos).nor();
+        Vector2 dashPos = sNode.pos.cpy();
+        dashPos.add(toNode.cpy().setLength(sNode.circleRadius + (distance)/2));
+
+        Sprite dash = DrawingBoard.createSprite(dashName);
+
+        dash.setSize(distance, 8);
+        dash.setOriginCenter();
+        dash.setRotation(toNode.angleDeg());
+        dash.setCenter(dashPos.x, dashPos.y);
+
+        drawingBoard.addSprite(dash, DrawingBoard.getSprites());
+
+    }
+
+    private void drawDashes(StarMapNode sNode, StarMapNode chNode, String dashName){
+
+        float distance = chNode.pos.dst(sNode.pos) - sNode.circleRadius - chNode.circleRadius;
+        int numOfDashes = (int) (distance/dashWidth);
+        float excess = (distance - numOfDashes * dashWidth)/numOfDashes;
+        Vector2 toNode = chNode.pos.cpy().sub(sNode.pos).nor().setLength(dashWidth + excess);
+        Vector2 dashPos = sNode.pos.cpy();
+        dashPos.add(toNode.cpy().setLength(sNode.circleRadius + (dashWidth + excess)/2));
+
+        for(int i = 0; i < numOfDashes; i++){
+
+            Sprite dash = DrawingBoard.createSprite(dashName);
+            dash.setSize(dashWidth + excess, 8);
+            dash.setOriginCenter();
+            dash.setRotation(toNode.angleDeg());
+            dash.setCenter(dashPos.x, dashPos.y);
+            dashPos.add(toNode);
+
+            drawingBoard.addSprite(dash, DrawingBoard.getSprites());
+        }
     }
 
     @Override
     public void render(float delta) {
 
-        Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        if(game.getScreen() == this) {
+            Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        }
 
         updateCamera();
         updateTimers(delta);
@@ -158,19 +224,18 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
     }
 
     private void updateTimers(float delta){
-        totalTime += delta;
+        if(started)
+            totalTime += delta;
     }
 
     private void panCamera(){
-
-        camera.position.y = 100;
-
-        if(totalTime > 1) {
+        if(started) {
             camera.translate(0, cameraPanSpeed, 0);
-            //if(camera.position.y <= )
-            cameraPanSpeed -= 0.1;
-            if (camera.position.y <= 150)
+            cameraPanSpeed -= 0.05;
+            if (camera.position.y <= 200) {
                 introCameraPan = false;
+                cameraPanSpeed = 0;
+            }
         }
     }
 
@@ -188,10 +253,10 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
      */
     private boolean hasChild(StarMapNode node1, StarMapNode node2){
 
-       if(node1 == null || node2 == null)
-           return false;
+        if(node1 == null || node2 == null)
+            return false;
 
-       return node1.children.contains(node2);
+        return node1.children.contains(node2);
     }
 
     /**
@@ -299,10 +364,10 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         return false;
     }
 
-    private void initMap() {
+    public void initMap() {
 
         StarMapNode[] prevNodes = new StarMapNode[mapWidth];
-        StarMapNode[] nextNodes = new StarMapNode[mapWidth];
+        StarMapNode[] nextNodes;
 
         starMap = new StarMapNode[numberOfLevels][mapWidth];
 
@@ -311,6 +376,9 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         int numberOfNodes = RandomUtil.nextInt(4) + 3;
         int prevNumberOfNodes = 0;
         int numberOfExtraBranches = 0;
+
+        nodeHeight = h/6;
+        earthPos = numberOfLevels * nodeHeight;
 
         ArrayList<Integer> places = createPlacesArray(mapWidth);
 
@@ -435,16 +503,6 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
     }
 
     @Override
-    public void show() {
-
-    }
-
-    @Override
-    public void resize(int width, int height) {
-
-    }
-
-    @Override
     public void pause() {
 
     }
@@ -470,8 +528,26 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         if( keycode == Input.Keys.SPACE){
             reset = true;
         }
+        if ( keycode == Input.Keys.F){
+            toggleFullScreen();
+        }
+        if ( keycode == Input.Keys.ESCAPE){
+            Gdx.graphics.setWindowedMode(500,800);
+            initializeCamera();
+            updateCamera();
+        }
+        if ( keycode == Input.Keys.Z ){
+            camera.zoom += 0.05;
+            updateCamera();
+        }
+        if ( keycode == Input.Keys.X ){
+            camera.zoom -= 0.05;
+            updateCamera();
+        }
         return false;
     }
+
+
 
     @Override
     public boolean keyUp(int keycode) {
@@ -493,7 +569,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
 
         for(int r=0;r<starMap.length;r++){
             StarMapNode[] row = starMap[r];
-            for(int c=0;c<starMap.length;c++){
+            for(int c=0;c<row.length;c++){
                 StarMapNode node = row[c];
                 if(node == null) continue;
                 node.selected = false;
@@ -517,7 +593,6 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
 
         float y = Gdx.input.getDeltaY() * 1.5f;
         camera.translate(0,y);
-
         return false;
     }
 
@@ -541,6 +616,10 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         makeChildrenPlayable(currentNode);
     }
 
+    public void start() {
+        started = true;
+    }
+
     private class StarMapNode {
 
         public int level;
@@ -551,6 +630,7 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
         public boolean playable;
         public float circleRadius;
         public float xPos, yPos;
+        public Vector2 pos;
         public ArrayList<StarMapNode> children;
         public LevelInfo levelInfo;
 
@@ -558,24 +638,24 @@ public class StarMap extends GameLevelObject implements Screen, InputProcessor {
 
             float colWidth = (w - 10) / mapWidth;
 
-            this.level  = level;
+            this.level  = level + 1;
             this.col    = col;
             children = new ArrayList<>();
-            circleRadius = RandomUtil.nextFloat()*3+12;
+            circleRadius = colWidth / 2 - RandomUtil.nextFloat() * colWidth / 8;
 
-            xPos = col*colWidth + circleRadius + 5 + RandomUtil.nextFloat()*10;
-            yPos = level * nodeHeight;
+            xPos = col*colWidth + circleRadius + 5 + RandomUtil.nextInt(10);
+            yPos = level * nodeHeight + RandomUtil.nextInt(20) - 10;
+
+            pos = new Vector2(xPos, yPos);
 
             selected = false;
             playable = false;
             finished = false;
 
             switch (gameMode) {
-                case CITY_DEFENDER : levelInfo = new CityDefenderLevelInfo(level); break;
-                case SPACE_INVADERS: levelInfo = new SpaceInvadersLevelInfo(level); break;
+                case CITY_DEFENDER : levelInfo = new CityDefenderLevelInfo(this.level); break;
+                case SPACE_INVADERS: levelInfo = new SpaceInvadersLevelInfo(this.level); break;
             }
-
-            levelInfo = new SpaceInvadersLevelInfo(level);
 
         }
 

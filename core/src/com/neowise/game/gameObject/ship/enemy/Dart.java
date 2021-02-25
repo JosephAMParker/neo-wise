@@ -35,13 +35,15 @@ public class Dart extends ShipTriangle {
         diveHeight   = 1;
         angle = startAngle;
         dropping = false;
-        dropTimer = RandomUtil.nextInt(10)+5;
+        dropTimer = RandomUtil.nextInt(15)+3;
         dropTimerMax = dropTimer;
         shots = 3;
-        bomb = new Bomb(null, null, 3,20,2);
+        bomb = new Bomb(null, null, 50,3,200,2);
         bomb.setColor(Color.CLEAR);
 
         initTarget();
+
+        reward = 2;
     }
 
     public Dart(Vector2 pos, float orbitalRange, int clockwise) {
@@ -55,10 +57,13 @@ public class Dart extends ShipTriangle {
     }
 
     private void checkAlive(){
-        if(bomb.toRemove())
+        if(bomb.toRemove()) {
             toRemove = true;
+            reward = 0;
+        }
         if(health < 0){
             bomb.toRemove = true;
+            toRemove = true;
         }
     }
 
@@ -69,9 +74,6 @@ public class Dart extends ShipTriangle {
         updateTargetPos(delta);
         updatePos(delta);
         fire(basicLevel.hostileProjectiles);
-        if(!inSquad)
-            attemptToJoinSquad(basicLevel.enemySquads);
-
     }
 
     private void fire(Collection<WeaponProjectile> hostileProjectiles) {
@@ -80,7 +82,7 @@ public class Dart extends ShipTriangle {
         if(!dropping && dropTimer < 0){
             dropping = true;
             bomb.pos = pos;
-            bomb.vel = vel.scl(50);
+            bomb.vel = vel.scl(25);
             hostileProjectiles.add(bomb);
         }
     }

@@ -1,6 +1,7 @@
 package com.neowise.game.gameObject.player.Weapon;
 
 import com.badlogic.gdx.math.Vector2;
+import com.neowise.game.draw.DrawingBoard;
 import com.neowise.game.gameObject.weaponProjectile.LaserBeam;
 import com.neowise.game.gameObject.weaponProjectile.LaserBeamFriendly;
 import com.neowise.game.main.BasicLevel;
@@ -14,12 +15,15 @@ public class LaserBeamGun extends Weapon{
         super();
         weaponType = Constants.WEAPON_TYPES.LASER_BEAM;
         laserBeam = new LaserBeamFriendly(pos, damage);
+        sprite = DrawingBoard.createSprite("laserIcon");
+        weaponName = "Laser";
     }
 
     @Override
-    public void fire(Vector2 playerPos, boolean firePressed, BasicLevel basicLevel) {
+    public void fire(Vector2 playerPos, boolean firePressed, BasicLevel basicLevel, float delta) {
 
         if(firePressed){
+            System.out.println(laserBeam.pos);
             laserBeam.toRemove = false;
             if(!laserBeam.inUse) {
                 basicLevel.friendlyProjectiles.add(laserBeam);

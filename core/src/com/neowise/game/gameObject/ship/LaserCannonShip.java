@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.neowise.game.gameObject.weaponProjectile.LaserBeamHostile;
 import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
 import com.neowise.game.main.BasicLevel;
+import com.neowise.game.util.Constants;
 import com.neowise.game.util.RandomUtil;
 
 import java.util.Collection;
@@ -19,6 +20,9 @@ public class LaserCannonShip extends ShipCircle{
     public LaserCannonShip(Vector2 pos, float radius, float orbitalRange) {
 
         super(pos);
+
+        shipType = Constants.SHIP_TYPES.LASER_CANNON_SHIP;
+
         this.radius = radius;
         this.orbitalRange = orbitalRange;
         health = 2000;
@@ -37,6 +41,8 @@ public class LaserCannonShip extends ShipCircle{
 
         dis2Target = pos.dst2(targetPos);
         prevDist = 0;
+
+        reward = 10;
     }
 
     private Vector2 getShootPos(){
@@ -47,6 +53,9 @@ public class LaserCannonShip extends ShipCircle{
         targetPos = pos.cpy().nor();
         targetPos.scl(orbitalRange + RandomUtil.nextInt(25));
         targetPos.rotateDeg(RandomUtil.nextInt(60) - 30);
+
+        dis2Target = 1000;
+        prevDist = 0;
     }
 
     @Override
@@ -67,14 +76,14 @@ public class LaserCannonShip extends ShipCircle{
 
     private void fire(Collection<WeaponProjectile> hostileProjectiles) {
 
-        if(shootTimer < 0){
+        if(firingPosition && shootTimer < 0){
             if(!laser.inUse){
                 hostileProjectiles.add(laser);
                 laser.inUse = true;
             }
         }
 
-        if(firingPosition && laser.length > 600) {
+        if(firingPosition && laser.length > 500) {
             firingPosition = false;
             laser.toRemove = true;
             laser.inUse    = false;
@@ -100,8 +109,9 @@ public class LaserCannonShip extends ShipCircle{
 
         rotation = pos.angleDeg() + 90;
 
-        if(!firingPosition && (prevDist - dis2Target) < 1) {
+        if(!firingPosition && (prevDist - dis2Target) < 1 && dis2Target < 60) {
             firingPosition = true;
+            shootTimer = shootTimerReset;
             resetLaser();
         }
     }
@@ -125,8 +135,8 @@ public class LaserCannonShip extends ShipCircle{
     }
 
     @Override
-    public void kill() {
-        super.kill();
+    public void kill(BasicLevel basicLevel) {
+        super.kill(basicLevel);
         laser.toRemove = true;
         laser.inUse    = false;
     }

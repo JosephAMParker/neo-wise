@@ -25,16 +25,18 @@ public class Ship_TestShip extends ShipRectangle {
 
 		this.width  = 12;
 		this.height = 10;
-		this.health = 60;
+		this.health = 100;
+		maxHealth = health;
 		this.damage = 10;
 		this.orbitalRange = orbitalRange;
 		this.bombTimerReset = 8;
-		this.bombTimer = RandomUtil.nextFloat()*bombTimerReset;
+		this.bombTimer = (1+RandomUtil.nextFloat())*bombTimerReset;
 		this.targetTimer = RandomUtil.nextFloat() * 25;
 
 		setNewTarget();
 
 		animation = new MyAnimation("ShipTestShip",1,pos,rotation,true,200/6,width);
+		reward = 3;
 
 	}
 
@@ -53,9 +55,12 @@ public class Ship_TestShip extends ShipRectangle {
 	public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
 		shapeRenderer.identity();
 		shapeRenderer.translate(pos.x, pos.y, 0);
-		shapeRenderer.setColor(1-(health/50),0,health/50,1);
+		shapeRenderer.setColor(1-(health/maxHealth),0,health/maxHealth,1);
 		shapeRenderer.rotate(0, 0, 1, rotation);
 		shapeRenderer.rect(-width/2,-height/2, width, height);
+
+		shapeRenderer.setColor(1-(bombTimer/bombTimerReset),0,bombTimer/bombTimerReset,1);
+		shapeRenderer.circle(0,0,width / 3);
 	}
 
 	private void setNewTarget() {
@@ -96,12 +101,15 @@ public class Ship_TestShip extends ShipRectangle {
 		pos.lerp(targetPos, (float) (1-Math.pow(0.1, delta)));
 		rotation = pos.angleDeg() + 90;
 		vel = pos.cpy().sub(prevPos);
+
+		pos.add(impulse.cpy().scl(delta));
+		impulse.scl(delta * 0.99f);
 	}
 
 	public void fire(Collection<WeaponProjectile> hostileProjectiles) {
 		if(bombTimer <= 0) {
 			bombTimer += bombTimerReset + RandomUtil.nextFloat()*bombTimerReset;
-			Bomb bomb = new Bomb(pos.cpy(),1, damage, 0.7f);
+			Bomb bomb = new Bomb(pos.cpy(),30,1, damage, 0.7f);
 			hostileProjectiles.add(bomb);
 		}
 	}

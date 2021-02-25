@@ -34,7 +34,7 @@ public abstract class LaserBeam extends WeaponProjectile{
     @Override
     public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
         shapeRenderer.setColor(color);
-        shapeRenderer.rectLine(pos, endLaser, 8);
+        shapeRenderer.rectLine(pos, endLaser, 3);
     }
 
 }

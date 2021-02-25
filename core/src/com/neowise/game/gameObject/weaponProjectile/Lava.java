@@ -20,23 +20,36 @@ public class Lava extends WeaponProjectile {
 
 	int lavaSize;
 	int lavaDamage;
-	boolean onGround;
+	boolean onGround, gravity;
+	float hitDelay, hitDelayReset, lifeSpan;
 
-	private void initLava(Vector2 pos, int lavaDamage, int damage) {
+	private void initLava(Vector2 pos, int lavaDamage, float lifeSpan) {
 		this.pos = pos;
 		this.lavaDamage = lavaDamage;
-		this.damage = damage;
-		lavaSize = 8;
-		size = 1;
+		this.lifeSpan = lifeSpan;
+		this.gravity = true;
+		lavaSize = 12;
+		size = 2;
+		damage = 1;
+
+		hitDelayReset = 0.8f;
+		hitDelay = 0;
 	}
 
-	public Lava(Vector2 pos, int lavaDamage, int damage) {
-		initLava(pos, lavaDamage, damage);
+	public Lava(Vector2 pos, int lavaDamage, float lifeSpan) {
+		initLava(pos, lavaDamage, lifeSpan);
 		this.vel = new Vector2(0,0);
 	}
-	public Lava(Vector2 pos, Vector2 vel,  int lavaDamage, int damage) {
-		initLava(pos, lavaDamage, damage);
+
+	public Lava(Vector2 pos, Vector2 vel,  int lavaDamage, float lifeSpan) {
+		initLava(pos, lavaDamage, lifeSpan);
 		this.vel = vel;
+	}
+
+	public Lava(Vector2 pos, Vector2 vel,  int lavaDamage, float lifeSpan, boolean gravity) {
+		initLava(pos, lavaDamage, lifeSpan);
+		this.vel = vel;
+		this.gravity = gravity;
 	}
 
 	/**
@@ -60,26 +73,40 @@ public class Lava extends WeaponProjectile {
 	}
 
 	public void jiggle() {
-		vel.x = RandomUtil.nextInt(30)-15;
-		vel.y = RandomUtil.nextInt(30)-15;
+		vel.x = RandomUtil.nextInt(20)-10;
+		vel.y = RandomUtil.nextInt(20)-10;
 	}
 
 	@Override
 	public boolean toRemove() {
-		return lavaDamage <= 0;
+		return lifeSpan <= 0;
 	}
 
+	private void updateTimers(float delta){
+		if(hitDelay > 0)
+			hitDelay -= delta;
+		lifeSpan -= delta;
+	}
 	@Override
 	public void update(BasicLevel basicLevel, float delta) {
+
+		updateTimers(delta);
+
 		HomeBase homeBase = basicLevel.homeBase;
-		if (CollisionDetector.collision(pos.x, pos.y, homeBase)) {
+		if (CollisionDetector.collisionPointPixmap(pos, homeBase)) {
 			onGround = true;
 		}
 		updatePos(delta);
 		rotateByPlanet(homeBase.rotationDelta * delta, homeBase.pos);
-		Physics.Force_Gravity(this, homeBase.getPos(), delta);
-		if(CollisionDetector.collision(pos, homeBase.getPos(), homeBase.rotation, homeBase.pixmap))
+
+		if(gravity)
+			Physics.Force_Gravity(this, homeBase.getPos(), delta);
+
+		if(CollisionDetector.collisionPointPixmap(pos, homeBase))
 			explode(homeBase, basicLevel.friendlyTurrets);
+
+		size *= 0.99f;
+		size = Math.max(size, 0.5f);
 	}
 
 	private void explode(HomeBase homeBase, Collection<Defender> friendlyTurrets){
@@ -95,11 +122,12 @@ public class Lava extends WeaponProjectile {
 			}
 		}
 
-		homeBase.removePointsLava(pos.x, pos.y, lavaSize, (int) damage);
-		homeBase.checkIntegrity = true;
-		lavaDamage -= 1;
-		size *= 0.99f;
-		size = size < 0.5f ? 0.5f: size;
+		if(hitDelay <= 0) {
+			if(lavaDamage > 0)
+				homeBase.removePointsLava(pos.x, pos.y, lavaSize);
+			lavaDamage -= 1;
+			hitDelay = hitDelayReset;
+		}
 		jiggle();
 	}
 

@@ -12,6 +12,10 @@ varying vec2 v_texCoord0;
 void main()
 {
     vec4 texColor = texture2D(u_texture, v_texCoord0);
-    texColor = vec4(1.0-texColor.a*0.7,0.3+texColor.a*0.01,0.2,sign(texColor.a));
+    if (texColor.a == 1.0)
+        texColor = vec4(0,0,0,0);
+    else
+        texColor = vec4(0.34 + texColor.a * 0.12, 0.33 - texColor.a * 0.05, 0.29 - texColor.a * 0.05, 1);
+
     gl_FragColor = v_color * texColor;
 }

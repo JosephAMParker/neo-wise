@@ -23,6 +23,10 @@ public class RandomUtil {
         return random.nextBoolean();
     }
 
+    public static boolean nextBoolean(float prob){
+        return random.nextFloat() <= prob;
+    }
+
     public static int nextOne() {
         if(random.nextBoolean())
             return 1;

@@ -179,4 +179,9 @@ public class CityBombTurret extends Defender {
     public void update(BasicLevel basicLevel, float delta) {
 
     }
+
+    @Override
+    public void reset() {
+
+    }
 }

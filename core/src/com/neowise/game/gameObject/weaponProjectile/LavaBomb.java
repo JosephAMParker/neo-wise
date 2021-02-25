@@ -27,7 +27,7 @@ public class LavaBomb extends ParticleBomb {
         for (int i = 0;i < particleCount;i++){
             vel.setLength(10 + RandomUtil.nextInt(80));
             vel.rotateDeg(RandomUtil.nextInt(360));
-            lava = new Lava(pos.cpy(), vel.cpy(),8, 1);
+            lava = new Lava(pos.cpy(), vel.cpy(),4, 6 + RandomUtil.nextFloat() * 4);
             tempHostileProjectiles.add(lava);
         }
     }

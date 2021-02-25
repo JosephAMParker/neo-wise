@@ -25,6 +25,7 @@ public class BulletFriendly extends Bullet{
             Ship ship = shit.next();
             if(ship.collisionPoint(pos)){
                 ship.health -= damage;
+                ship.impulse.add(vel.scl(0.2f));
                 toRemove = true;
                 return;
             }

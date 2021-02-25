@@ -27,7 +27,6 @@ public class Ship_CityBombLobber extends ShipRectangle {
         width = 15;
         height = 10;
         health = 100;
-        resWorth = 50;
 
 
         speed = 0.4f;

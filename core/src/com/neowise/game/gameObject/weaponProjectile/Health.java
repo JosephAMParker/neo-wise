@@ -14,20 +14,26 @@ import java.util.Collection;
 
 public class Health extends WeaponProjectile {
 
-    private Boolean onGround;
-    private int healCount, healAmount;
+    protected Boolean onGround = false;
+    protected int healCount, healAmount, healRadius;
+    protected float digCounter, healCounter, healCounterReset;
+    protected boolean hasHit, firstHit;
 
-    private void initHealth(Vector2 pos, Vector2 vel, int healCount, int healAmount) {
+    protected void initHealth(Vector2 pos, Vector2 vel, int healCount, int healAmount) {
         this.pos = pos;
         this.vel = vel;
         this.healCount  = healCount;
         this.healAmount = healAmount;
-        size = 1;
-        onGround = false;
-    }
+        this.size = 1;
+        healCounterReset = 0.1f;
+        healCounter = 0;
+        digCounter = RandomUtil.nextFloat() * 0.041f;
+        hasHit = false;
+        firstHit = false;
 
-    public Health(Vector2 pos, int healCount, int healAmount){
-        initHealth(pos, new Vector2(), healCount, healAmount);
+        this.healCount = 10;
+        this.healAmount = 10;
+        healRadius = 10 + RandomUtil.nextInt(2);
     }
 
     public Health(Vector2 pos, Vector2 vel, int healCount, int healAmount){
@@ -46,31 +52,35 @@ public class Health extends WeaponProjectile {
 
     @Override
     public void renderShapeRenderer(ShapeRenderer shapeRenderer) {
-        shapeRenderer.setColor(Color.GREEN);
-        shapeRenderer.circle(pos.x, pos.y, size);
+        if(!firstHit) {
+            shapeRenderer.setColor(Color.GREEN);
+            shapeRenderer.circle(pos.x, pos.y, size);
+        }
     }
 
     @Override
     public void update(BasicLevel basicLevel, float delta) {
         HomeBase homeBase = basicLevel.homeBase;
-        if (CollisionDetector.collision(pos.x, pos.y, homeBase)) {
-            onGround = true;
-        }
         updatePos(delta);
         rotateByPlanet((float) homeBase.rotationDelta * delta);
         Physics.Force_Gravity(this, homeBase.getPos(), delta);
-        if(CollisionDetector.collision(pos, homeBase.getPos(), homeBase.rotation, 0.9f, homeBase.pixmap))
+        if(CollisionDetector.collisionPointPixmap(pos, homeBase, 80)) {
             heal(homeBase, basicLevel.friendlyTurrets);
+            onGround = true;
+            firstHit = true;
+        }
     }
 
     public void jiggle() {
-        vel.x = RandomUtil.nextInt(30)-15;
-        vel.y = RandomUtil.nextInt(30)-15;
+        Vector2 r = pos.cpy().nor().scl(-1);
+        vel = r.cpy().scl(RandomUtil.nextInt(10) + 10);
+        vel.x = RandomUtil.nextInt(50)-25;
+        vel.y = RandomUtil.nextInt(50)-25;
     }
 
-    private void heal(HomeBase homeBase, Collection<Defender> friendlyTurrets) {
+    protected void heal(HomeBase homeBase, Collection<Defender> friendlyTurrets) {
         healCount -= 1;
-        homeBase.addHealthBombPoints(pos.x, pos.y, 8, 50);
+        homeBase.addHealthBombPoints(pos.x, pos.y, healRadius, healAmount);
         homeBase.setCheckIntegrity();
         jiggle();
     }

@@ -1,6 +1,7 @@
 package com.neowise.game.gameObject.player.Weapon;
 
 import com.badlogic.gdx.math.Vector2;
+import com.neowise.game.draw.DrawingBoard;
 import com.neowise.game.gameObject.explosion.Explosion;
 import com.neowise.game.gameObject.weaponProjectile.Bullet;
 import com.neowise.game.gameObject.weaponProjectile.PlayerCityBomb;
@@ -23,6 +24,8 @@ public class CityDefender extends Weapon {
         weaponType = Constants.WEAPON_TYPES.BOMB;
         bombDelayReset = 0.2f;
         bombDelay = bombDelayReset;
+        sprite = DrawingBoard.createSprite("bombIcon");
+        weaponName = "Bomb";
     }
 
     private void detonateBombs(Collection<WeaponProjectile> friendlyProjectiles, Collection<Explosion> friendlyExplosions) {
@@ -37,7 +40,7 @@ public class CityDefender extends Weapon {
     }
 
     @Override
-    public void fire(Vector2 playerPos, boolean firePressed, BasicLevel basicLevel) {
+    public void fire(Vector2 playerPos, boolean firePressed, BasicLevel basicLevel, float delta) {
 
         if (!firePressed) {
             weaponFired = false;

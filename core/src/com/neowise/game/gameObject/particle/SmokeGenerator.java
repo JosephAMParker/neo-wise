@@ -27,28 +27,6 @@ public class SmokeGenerator {
 
     }
 
-    public void locateGround(HomeBase homeBase, float delta) {
-
-
-        if (CollisionDetector.collision(pos.x, pos.y, homeBase)) {
-            Vector2 toPlanet = (homeBase.getPos()).sub(pos);
-            toPlanet.nor();
-            while(CollisionDetector.collision(pos.x, pos.y, homeBase)){
-                pos.sub(toPlanet.scl(1f));
-            }
-            pos.sub(toPlanet.scl(1f / 3));
-        }
-
-        else {
-            // step towards the ground
-            Vector2 toPlanet = (homeBase.getPos()).sub(pos);
-            toPlanet.nor();
-            pos.add(toPlanet.scl(10*delta));
-
-        }
-
-    }
-
     /**
      * rotates the turret in space to match the rotation of the planet its resting on
      * @param

@@ -6,7 +6,6 @@ import com.neowise.game.gameObject.GameObject;
 public class Physics {
 	
 	static float G = 120f;
-	public static float mass;
 
 	public static void Force_Gravity(GameObject obj, Vector2 pos, float delta) {
 		obj.vel.add(obj.pos.cpy().nor().scl(-G * delta));

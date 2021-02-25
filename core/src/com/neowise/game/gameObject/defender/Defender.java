@@ -23,7 +23,7 @@ public abstract class Defender extends GameObject {
 		
 	}
 
-	public void locateGround2(HomeBase homeBase, float delta) {
+	public void locateGround(HomeBase homeBase, float delta) {
 
 		if(onGround)
 			return;
@@ -33,9 +33,9 @@ public abstract class Defender extends GameObject {
 		Vector2 t = pos.cpy().sub(toPlanet.cpy().scl(size/2));
 		//pos.sub(toPlanet.scl(size/2));
 
-		if (CollisionDetector.collision(b.x, b.y, homeBase)) {
+		if (CollisionDetector.collisionPointPixmap(b, homeBase)) {
 
-			if(CollisionDetector.collision(t.x, t.y, homeBase)){
+			if(CollisionDetector.collisionPointPixmap(t, homeBase)){
 
 				// step towards the sky
 				pos.sub(toPlanet.scl(250*delta));
@@ -51,28 +51,6 @@ public abstract class Defender extends GameObject {
 		}
 		//pos.add(toPlanet);
 
-	}
-	
-	public void locateGround(HomeBase homeBase, float delta) {
-		
-		if(onGround)
-			return;
-			
-		Vector2 toPlanet = pos.cpy().nor().scl(-1);
-		if (CollisionDetector.collision(pos.x, pos.y, homeBase)) {
-			onGround = true;
-			while(CollisionDetector.collision(pos.x, pos.y, homeBase)){
-				pos.sub(toPlanet.scl(1f));
-			}
-			pos.sub(toPlanet.scl(1f * size / 3));
-		}
-		
-		else {
-			// step towards the ground
-			pos.add(toPlanet.scl(100*delta));
-			
-		}
-		
 	}
 	
 	/**
@@ -105,4 +83,6 @@ public abstract class Defender extends GameObject {
 	public abstract void updateTimers(float delta);
 	public abstract void renderShapeRenderer(ShapeRenderer shapeRenderer);
 	public abstract void update(BasicLevel basicLevel, float delta);
+
+    public abstract void reset();
 }

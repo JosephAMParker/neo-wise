@@ -17,22 +17,22 @@ import java.util.Iterator;
 
 public class Bomb extends WeaponProjectile {
 
-	public float explosionSize;
+	public int explosionSize;
 
-	private void initBomb(Vector2 pos, Vector2 vel, float size, float damage, float shake){
+	private void initBomb(Vector2 pos, Vector2 vel, int explosionSize, float size, float damage, float shake){
 		this.pos = pos;
 		this.vel = vel;
-		this.explosionSize = damage;
+		this.explosionSize = explosionSize;
 		this.size = size;
 		this.damage = damage;
 		this.shake = shake;
 		color = Color.WHITE;
 	}
-	public Bomb(Vector2 pos, float size, float damage, float shake){
-			initBomb(pos, Vector2.Zero.cpy(), size, damage, shake);
+	public Bomb(Vector2 pos, int explosionSize, float size, float damage, float shake){
+			initBomb(pos, Vector2.Zero.cpy(), explosionSize, size, damage, shake);
 	}
-	public Bomb(Vector2 pos, Vector2 vel, float size, float damage, float shake){
-		initBomb(pos, vel, size, damage, shake);
+	public Bomb(Vector2 pos, Vector2 vel, int explosionSize, float size, float damage, float shake){
+		initBomb(pos, vel, explosionSize, size, damage, shake);
 	}
 
 	@Override
@@ -47,10 +47,10 @@ public class Bomb extends WeaponProjectile {
 		HomeBase homeBase = basicLevel.homeBase;
 		Physics.Force_Gravity(this, homeBase.getPos(), delta);
 
-		if(CollisionDetector.collision(pos, homeBase.pos, homeBase.rotation, homeBase.pixmap)){
+		if(CollisionDetector.collisionPointPixmap(pos, homeBase)){
 			explode(homeBase, basicLevel.friendlyTurrets);
 			ScreenShake.addDuration(shake);
-			addAnimation(basicLevel.frontAnimations);
+			addAnimation(basicLevel.middleAnimations);
 			toRemove = true;
 		}
 	}
@@ -69,7 +69,9 @@ public class Bomb extends WeaponProjectile {
 
 	private void explode(HomeBase homeBase, Collection<Defender> friendlyTurrets) {
 
+		//explosionSize += RandomUtil.nextInt(10);
 		explosionSize += RandomUtil.nextInt(10);
+		int holeSize = (int) (explosionSize * (0.3f + RandomUtil.nextFloat()/10));
 
 		if(CollisionDetector.collisionCircleCircle(pos, explosionSize, homeBase.core.pos, homeBase.core.radius))
 			homeBase.core.causeDamage(damage);
@@ -83,7 +85,7 @@ public class Bomb extends WeaponProjectile {
 		}
 
 		homeBase.checkIntegrity = true;
-		homeBase.removePointsBomb(pos.x, pos.y, (int) explosionSize, 0.3f + RandomUtil.nextFloat()/10);
+		homeBase.removePointsBomb(pos.x, pos.y, (int) explosionSize, holeSize, false);
 	}
 
 	@Override

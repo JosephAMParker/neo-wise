@@ -10,6 +10,7 @@ import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
 import com.neowise.game.homeBase.HomeBase;
 import com.neowise.game.main.BasicLevel;
 import com.neowise.game.physics.CollisionDetector;
+import com.neowise.game.util.Constants;
 
 import java.util.Collection;
 
@@ -106,6 +107,8 @@ public class LaserTurret extends Defender {
 
 				if(CollisionDetector.collisionCircleSquare(pos.x, pos.y, range, ship.pos.x, ship.pos.y, 1)){
 
+					if(ship.shipType == Constants.SHIP_TYPES.UPGRADE_SHIP)
+						continue;
 					//aimAtBird: Vector pointing to the bird
 					toTarget = ship.getPos();
 					toTarget.add(ship.getVel().scl(15));
@@ -151,11 +154,16 @@ public class LaserTurret extends Defender {
 
 		updateTimers(delta);
 		HomeBase homeBase = basicLevel.homeBase;
-		locateGround2(homeBase, delta);
+		locateGround(homeBase, delta);
 		rotateByPlanet(homeBase.rotationDelta * delta, homeBase.pos);
 		attemptToLoseTarget(homeBase, delta);
 		attemptToFire(basicLevel.friendlyProjectiles);
 		acquireTarget(homeBase, basicLevel.ships);
+	}
+
+	@Override
+	public void reset() {
+		loseTarget();
 	}
 
 	@Override

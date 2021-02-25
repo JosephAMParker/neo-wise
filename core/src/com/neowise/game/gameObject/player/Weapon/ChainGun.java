@@ -1,14 +1,12 @@
 package com.neowise.game.gameObject.player.Weapon;
 
 import com.badlogic.gdx.math.Vector2;
+import com.neowise.game.draw.DrawingBoard;
 import com.neowise.game.gameObject.weaponProjectile.Bullet;
 import com.neowise.game.gameObject.weaponProjectile.BulletFriendly;
-import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
 import com.neowise.game.main.BasicLevel;
 import com.neowise.game.util.Constants;
 import com.neowise.game.util.RandomUtil;
-
-import java.util.Collection;
 
 public class ChainGun extends Weapon{
 
@@ -21,21 +19,27 @@ public class ChainGun extends Weapon{
 
         shootTimerReset = 0.3f;
         shootTimerMin   = 0.03f;
-        shootSpeedInc   = 0.03f;
+        shootSpeedInc   = 0.1f;
         shootTimer = shootTimerReset;
         originalShootTimer = shootTimerReset;
+        sprite = DrawingBoard.createSprite("chaingunIcon");
+        weaponName = "Chain Gun";
 
     }
 
     @Override
-    public void fire(Vector2 playerPos, boolean firePressed, BasicLevel basicLevel) {
+    public void fire(Vector2 playerPos, boolean firePressed, BasicLevel basicLevel, float delta) {
+
+        System.out.println(shootTimerReset);
+
         if(!firePressed) {
-            shootTimerReset = originalShootTimer;
+            if(shootTimerReset < originalShootTimer)
+                shootTimerReset += shootSpeedInc * delta;
             return;
-        }
+        } else
+            shootTimerReset -= shootSpeedInc * delta;
 
         if(shootTimer <= 0){
-            shootTimerReset -= shootSpeedInc;
             shootTimerReset = Math.max(shootTimerMin, shootTimerReset);
             shootTimer = shootTimerReset;
             Bullet bullet = new BulletFriendly(
@@ -45,7 +49,6 @@ public class ChainGun extends Weapon{
                            20,1);
             basicLevel.friendlyProjectiles.add(bullet);
         }
-
     }
 
     @Override

@@ -6,7 +6,8 @@ import com.neowise.game.gameObject.GameObject;
 
 public class HomeBaseCore extends GameObject {
 
-    public float radius, radius2, health;
+    public int radius, radius2;
+    public float health;
     public MyAnimation animation;
 
     public HomeBaseCore(Vector2 pos, float health){

@@ -1,6 +1,7 @@
 package com.neowise.game.gameObject.player.Weapon;
 
 import com.badlogic.gdx.math.Vector2;
+import com.neowise.game.draw.DrawingBoard;
 import com.neowise.game.gameObject.weaponProjectile.Bullet;
 import com.neowise.game.gameObject.weaponProjectile.BulletFriendly;
 import com.neowise.game.gameObject.weaponProjectile.WeaponProjectile;
@@ -16,10 +17,12 @@ public class ShotGun extends Weapon {
         shootTimerReset = 0.33f;
         shootTimer = shootTimerReset;
         weaponType = Constants.WEAPON_TYPES.FLAK;
+        sprite = DrawingBoard.createSprite("shotgunIcon");
+        weaponName = "Shotgun";
     }
 
     @Override
-    public void fire(Vector2 playerPos, boolean firePressed, BasicLevel basicLevel) {
+    public void fire(Vector2 playerPos, boolean firePressed, BasicLevel basicLevel, float delta) {
 
         if(shootTimer > 0 || !firePressed)
             return;

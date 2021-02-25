@@ -7,6 +7,7 @@ public abstract class LevelInfo {
     public int level;
     public float levelTimer;
     public Constants.GAME_MODE gameMode;
+    public int wave, maxWaves;
     protected BasicLevel basicLevel;
 
     public LevelInfo(int level, Constants.GAME_MODE gameMode){
@@ -22,7 +23,7 @@ public abstract class LevelInfo {
 
     public abstract void updateTimers(float delta);
 
-    public abstract Constants.GAME_STATES checkLevelState(BasicLevel basicLevel);
+    public abstract void checkLevelState(BasicLevel basicLevel);
 
     public abstract void update(float delta);
 }

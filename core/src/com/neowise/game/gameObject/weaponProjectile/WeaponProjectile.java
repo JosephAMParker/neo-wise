@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.neowise.game.gameObject.GameObject;
 import com.neowise.game.main.BasicLevel;
+import com.neowise.game.util.Constants;
 
 public abstract class WeaponProjectile extends GameObject {
 
@@ -25,7 +26,7 @@ public abstract class WeaponProjectile extends GameObject {
 
 	public void updatePos(float delta){
 		pos.add(vel.cpy().scl(delta));
-		if(pos.len2() > 1000000)
+		if(pos.len2() > Constants.REMOVE_DISTANCE2)
 			toRemove = true;
 	}
 

@@ -35,4 +35,9 @@ public class ScreenShake {
         if(dur > duration)
             duration = dur;
     }
+
+    public static void clear(){
+        duration = 0;
+        maxShakeTime = 1;
+    }
 }

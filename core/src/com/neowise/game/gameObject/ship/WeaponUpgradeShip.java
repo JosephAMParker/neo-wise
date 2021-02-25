@@ -3,17 +3,17 @@ package com.neowise.game.gameObject.ship;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.neowise.game.gameObject.pickup.PowerUp;
 import com.neowise.game.gameObject.pickup.WeaponUpgrade;
 import com.neowise.game.main.BasicLevel;
+import com.neowise.game.util.Constants;
 import com.neowise.game.util.RandomUtil;
-
-import java.util.Collection;
 
 public class WeaponUpgradeShip extends ShipCircle {
 
     public WeaponUpgradeShip(Vector2 pos, BasicLevel basicLevel) {
         super(pos);
+
+        shipType = Constants.SHIP_TYPES.UPGRADE_SHIP;
 
         this.health = 10;
         this.radius = 4;
@@ -56,8 +56,8 @@ public class WeaponUpgradeShip extends ShipCircle {
     }
 
     @Override
-    public void kill() {
-        super.kill();
-        basicLevel.powerUps.add(new WeaponUpgrade(pos.cpy(), basicLevel));
+    public void kill(BasicLevel basicLevel) {
+        super.kill(basicLevel);
+        this.basicLevel.powerUps.add(new WeaponUpgrade(pos.cpy(), this.basicLevel));
     }
 }

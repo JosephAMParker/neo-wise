@@ -23,6 +23,7 @@ public class CityBombStraight extends CityBomb{
         speed = 50;
         vel = pos.cpy().nor().scl(-speed);
         this.size = 3;
+        explosionSize = 50;
     }
 
     @Override
@@ -31,14 +32,13 @@ public class CityBombStraight extends CityBomb{
         HomeBase homeBase = basicLevel.homeBase;
 
         //if bullet collides with homeBase pixmap, remove
-        if (CollisionDetector.collision(pos, homeBase.pos, homeBase.rotation, homeBase.pixmap)){
+        if (CollisionDetector.collisionPointPixmap(pos, homeBase)){
 
-            homeBase.checkIntegrity = true;
             Vector2 toPlanet = pos.cpy().nor();
-            MyAnimation animation = new MyAnimation("bombtest",8, new Vector2(pos.x, pos.y).add(toPlanet.nor().scl(6)),toPlanet.angle()-90,false,0.08f,20);
-            basicLevel.frontAnimations.add(animation);
+            MyAnimation animation = new MyAnimation("bombtest",8, new Vector2(pos.x, pos.y).add(toPlanet.nor().scl(6)),toPlanet.angleDeg()-90,false,0.08f,1);
+            basicLevel.middleAnimations.add(animation);
 
-            homeBase.removePointsBomb(pos.x, pos.y, 10 + RandomUtil.nextInt(10), 0.3f + RandomUtil.nextFloat()/10, true);
+            homeBase.removePointsBomb(pos.x, pos.y, (int) explosionSize, 20, false);
             toRemove = true;
         }
     }

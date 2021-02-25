@@ -56,6 +56,6 @@ public class BulletHostile extends Bullet{
         }
 
         homeBase.checkIntegrity = true;
-        homeBase.removePointsBomb(_pos.x, _pos.y, (int) explosionSize, 0.3f + RandomUtil.nextFloat()/10, true);
+        homeBase.removePointsBomb(_pos.x, _pos.y, (int) explosionSize, (int) explosionSize/2, true);
     }
 }

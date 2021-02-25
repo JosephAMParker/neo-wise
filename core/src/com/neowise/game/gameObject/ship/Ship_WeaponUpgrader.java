@@ -21,7 +21,6 @@ public class Ship_WeaponUpgrader extends ShipCircle{
         super(pos);
 
         down = true;
-        resWorth = 80;
         mass = 2;
         width = 30;
         height = 20;

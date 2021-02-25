@@ -1,159 +1,72 @@
 package com.neowise.game.menu;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.math.Vector2;
+import com.neowise.game.main.GameLevelObject;
 import com.neowise.game.main.NeoWiseGame;
+import com.neowise.game.menu.UI.UIMainMenu;
+import com.neowise.game.util.Constants;
+import com.neowise.game.util.RandomUtil;
 
+public class MainMenuScreen extends GameLevelObject {
 
-public class MainMenuScreen implements Screen {
-
-    final NeoWiseGame game;
-
-    Stage stage;
-    //	OrthographicCamera camera;
-    Skin skin;
-    float w = Gdx.graphics.getWidth();
-    float h = Gdx.graphics.getHeight();
-    SpriteBatch batch;
+    private UIMainMenu ui;
+    private StarMap starMap;
+    private boolean showUI, homeBaseReady;
 
     public MainMenuScreen(final NeoWiseGame game) {
-        this.game = game;
 
-//		camera = new OrthographicCamera();
-//		camera.setToOrtho(false, 480, 800);
-
-        batch = new SpriteBatch();
-        stage = new Stage();
-        Gdx.input.setInputProcessor(stage);
-
-        skin = new Skin();
-
-        Pixmap pixmap = new Pixmap(100,100, Pixmap.Format.RGB888);
-        pixmap.setColor(Color.GREEN);
-        pixmap.fill();
-
-        skin.add("white", new Texture(pixmap));
-
-        BitmapFont bfont = new BitmapFont();
-        skin.add("default",bfont);
-
-        TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.up = skin.newDrawable("white",Color.DARK_GRAY);
-        textButtonStyle.down = skin.newDrawable("white", Color.DARK_GRAY);
-        textButtonStyle.checked = skin.newDrawable("white", Color.BLUE);
-        textButtonStyle.over = skin.newDrawable("white", Color.LIGHT_GRAY);
-
-        textButtonStyle.font = skin.getFont("default");
-
-        skin.add("default", textButtonStyle);
-        float width = w*0.7f;
-        float height = h*0.1f;
-
-        final TextButton newGameButton=new TextButton("New Game", textButtonStyle);
-        newGameButton.setPosition(w / 2 - width / 2, h * 0.6f);
-        newGameButton.setSize(width, height);
-
-        final TextButton optionsButton = new TextButton("Options", textButtonStyle);
-        optionsButton.setPosition(w / 2 - width / 2, h * 0.45f);
-        optionsButton.setSize(width, height);
-
-        stage.addActor(newGameButton);
-        stage.addActor(optionsButton);
-//		stage.addActor(textButton);
-
-        newGameButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                newGameButton.setText("Starting new game");
-                game.createNewHomeBase();
-                game.createNewPlayer();
-                game.createNewStarMap();
-                game.setScreen(game.getStarMap());
-            }
-        });
-
-        optionsButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                newGameButton.setText("Starting new game");
-                game.setScreen(new OptionsScreen(game));
-            }
-        });
-
+        super(game);
+        init();
     }
+
+    private void init() {
+
+        game.createNewStarMap();
+        starMap = game.getStarMap();
+        resetCamera();
+        starMap.initMap();
+        starMap.initializeCamera();
+        showUI = true;
+        ui = new UIMainMenu(hudCamera,w,h);
+        ui.init(w,h);
+        ui.setInput();
+
+   }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.2f, 0.2f, 0.2f, 1);
+
+        Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, bgColor.a);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        stage.act(delta);
-        stage.draw();
+        if(starMap.camera.position.y - starMap.planetRadius < starMap.earthPos)
+            showUI = false;
 
-    		/*
-		camera.update();
-		game.batch.setProjectionMatrix(camera.combined);
+        if(showUI)
+            ui.draw();
 
-		game.batch.begin();
-		game.font.draw(game.batch, "!!! ", w/2, h/2);
-		game.font.draw(game.batch, "Tap anywhere to begin!", w/2 - 60, h/2 + 200);
-		game.batch.end();
+        drawingBoard.draw();
+        starMap.render(delta);
 
-		if (Gdx.input.isTouched()) {
-			game.setScreen(new GameScreen(game));
-			dispose();
-		}
-		*/
+        if(ui.started()){
+            if(!homeBaseReady) {
+                homeBaseReady = true;
+                initHomeBase(true);
+            }
+            starMap.start();
+            starMap.setInput();
+            camera.translate(0, starMap.cameraPanSpeed, 0);
+        }
+
+        updateCamera();
     }
-
-
 
     @Override
     public void resize(int width, int height) {
-        // TODO Auto-generated method stub
-
+        super.resize(width, height);
+        init();
     }
-
-    @Override
-    public void show() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void hide() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void pause() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void resume() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void dispose() {
-        // TODO Auto-generated method stub
-        stage.dispose();
-        skin.dispose();
-
-    }
-
 }

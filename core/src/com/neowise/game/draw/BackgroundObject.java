@@ -9,28 +9,19 @@ import com.badlogic.gdx.math.Vector2;
  */
 public class BackgroundObject {
 
-    public Vector2 pos;
-    String atlasKey;
     public Sprite sprite;
+    public Vector2 pos;
+    public float size;
+    public float rotation;
+    public float alpha;
     public float speed;
-    public float speedMul = 1, scaleMul = 1;
 
-    public BackgroundObject(Vector2 pos, float speed, float speedMul, float scaleMul, String atlasKey) {
-
-        this.pos = pos;
-        this.atlasKey = atlasKey;
-        this.speedMul = speedMul;
-        this.scaleMul = scaleMul;
-        this.speed = speed*speedMul;
-
-        this.sprite = DrawingBoard.atlas.createSprite(atlasKey);
-
-    }
-
-    public BackgroundObject(Vector2 pos, float speed, String atlasKey) {
+    public BackgroundObject(Vector2 pos, float size, float rotation, float alpha, float speed, String atlasKey) {
 
         this.pos = pos;
-        this.atlasKey = atlasKey;
+        this.size = size;
+        this.rotation = rotation;
+        this.alpha = alpha;
         this.speed = speed;
         this.sprite = DrawingBoard.atlas.createSprite(atlasKey);
 

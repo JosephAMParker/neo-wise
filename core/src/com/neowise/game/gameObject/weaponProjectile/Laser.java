@@ -31,10 +31,6 @@ public class Laser extends WeaponProjectile {
         vel.nor().scl(speed);
     }
 
-    public void updatePos(float delta){
-        pos.add(vel.cpy().scl(delta));
-    }
-
     private Vector2 endLaser(){
         return getPos().add(getVel().nor().scl(length));
     }
